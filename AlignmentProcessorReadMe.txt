@@ -349,4 +349,4 @@ a terminal (change the output directory to the desired loaction):
 python AlignmentProcessor0.6.py --axt --kaks --ucsc -r green_anole \
 -i test.fa -o test/
 
-It should procude a text file with 17 lines.
+It should produce a text file with 17 lines.
