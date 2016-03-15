@@ -25,6 +25,7 @@
 2. Running AlignmentProcessor
 3. Individual Scripts
 4. Outputs
+5. Test
 
 #-------------------------------
 # 0. Introduction
@@ -337,3 +338,15 @@ fasta files to both formats. You may also run one of the individual scripts on
 the 07_rmStops directory to convert the files in a separate step. 
 AlignmentProcessor will not, however, run KaKs_Calculator and codeml 
 simultaneously, as this could require too much memory.
+
+#-------------------------------
+# 5. Run AlignmentProcessor on test data
+#-------------------------------
+
+Change directory into the AlignmentProcessor folder. Paste the followig into
+a terminal (change the output directory to the desired loaction):
+
+python AlignmentProcessor0.6.py --axt --kaks --ucsc -r green_anole \
+-i test.fa -o test/
+
+It should procude a text file with 17 lines.
