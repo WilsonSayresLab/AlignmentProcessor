@@ -1,6 +1,6 @@
 '''This program will check a multiple FASTA file in a directory 
     to see that the open reading frame is conserved in each species,
-    relative to reference species, human. If not it will correct it.
+    relative to reference species. If not it will correct it.
     This works only for insertions in non-reference species relative the
     reference. This program assumes that the reference species is in frame,
     so any non-triplet gaps in the reference will be removed from the
@@ -20,17 +20,7 @@
  (hg19)
 
 
-    AlignmentProcessor0.6 Copyright 2016 by Shawn Rupp
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License (GPL3.txt) for more details.'''
+    Copyright 2016 by Shawn Rupp'''
 
 from sys import argv
 from glob import glob
@@ -118,7 +108,7 @@ remove unknown amino acids'''
 
 def main():
     if argv[1] == "-h" or argv[1] == "--help":
-        print("Usage: python 03_CheckFrameOnDir.py <# of species>\
+        print("Usage: python 03_CheckFrame.py\
  <path to inut and output directories> <reference_species>")
         quit()
     else:

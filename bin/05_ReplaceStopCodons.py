@@ -7,17 +7,7 @@ Note: This assumes prior filtering has been done so that:
    -each nucleotide sequence is divisible by three evenly.
 
 
-    AlignmentProcessor0.6 Copyright 2016 by Shawn Rupp
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License (GPL3.txt) for more details.'''
+    Copyright 2016 by Shawn Rupp'''
 
 from sys import argv
 from glob import glob
@@ -29,14 +19,13 @@ def openFiles(path):
     files = glob(inpath)
     for file in files:
         with open(file, "r") as infile:
+	    # Determine number of remaining sequences per file
             n = 0
             for line in infile:
                 if line[0] == ">":
                     n += 1
         with open(file, "r") as infile:
             filename = file.split("/")[-1]
-            # Extract number of sequnces from file name
-            #n = int(filename.split(".")[1])
             # Create output file:
             outfile = (path + "05_ReplaceStopCodons/" + filename.split(".")[0]
                        + "." + str(n) + ".rmStops")
@@ -81,7 +70,7 @@ def removeStops(seqs, outfile):
                         
 def main():
     if argv[1] == "-h" or argv[1] == "--help":
-        print("Usage: python 05_ReplaceStopCodonsOnDir.py \
+        print("Usage: python 05_ReplaceStopCodons.py \
 <path to inut and output directories>")
         quit()
     else:

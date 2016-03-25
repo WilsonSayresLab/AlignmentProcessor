@@ -12,11 +12,12 @@
 
 
 ###############################################################
-# AlignmentProcessor0.6 Package
+# AlignmentProcessor0.7 Package
 #
 #	Dependencies:	Python 3
 #			Python 3 version of Biopython
 #			Perl
+#			PAML (comes packaged with Linux binaries)
 ###############################################################
 
 ### Contents ###
@@ -51,6 +52,21 @@ Once Anaconda is installed, all you have to do is paste the following into
 a terminal and Anaconda will install Biopython for you:
 
 	conda install -c https://conda.anaconda.org/anaconda biopython
+
+# KaKs_Calculator
+
+AlignmentProcessor0.7 is packaged with KaKs_Calculator2.0 binaries for Linux
+and Windows, and a KaKs_Calculator1.2 binary for Mac (there is no 2.0 binary
+available for OSX). Before using, copy or move the appropriate binary for your
+system into the AlignmentProcessor bin which contains the python scipts.
+
+# PAML 4.8
+
+AlignmentProcessor0.7 comes packaged with Linux binaries of PAML 4.8. If you 
+are using Mac or Windows, you will have to replace the Linux binaries with the
+appropriate package for you system 
+(http://abacus.gene.ucl.ac.uk/software/paml.html). Make sure that it is 
+titled "paml".
 
 #-------------------------------
 # 1. Obtaining a fasta alignment
@@ -120,7 +136,7 @@ in the bin/ directory.
 
 # Example Usage: 
 
-	python substituionManager0.3.py -% <decimal> \
+	python AlignmentProcessor.py -% <decimal> \
 		--axt/phylip --kaks/codeml --ucsc -i <input fasta file> \
 		-o <path to output directory> -r <reference species>
 
@@ -184,14 +200,17 @@ in the bin/ directory.
 	that they are unique for each file. You may also need to provide a 
 	tree file for codeml (see PAML manual above).
 
+	The control file must be titled titled “codeml.ctl”, and it must be 
+	locatedin the output directory.
+
 # Invoking the Ka/Ks pipeline with a UCSC alignment:
 
-	python AlignmentProcessor0.6.py --axt --kaks --ucsc -r green_anole \
+	python AlignmentProcessor0.7.py --axt --kaks --ucsc -r green_anole \
 	-i anolis_gallus.fa -o pairwiseKaKs/
 
 # Invoking the CodeML pipeline with a de novo alignment:
 
-	python AlignmentProcessor0.6.py --phylip --codeml -% 0.6 \
+	python AlignmentProcessor0.7.py --phylip --codeml -% 0.6 \
 	-r green_anole -i anolis_gallus.fa -o codemlOutput/
 
 #-------------------------------
@@ -346,7 +365,7 @@ simultaneously, as this could require too much memory.
 Change directory into the AlignmentProcessor folder. Paste the followig into
 a terminal (change the output directory to the desired loaction):
 
-python AlignmentProcessor0.6.py --axt --kaks --ucsc -r green_anole \
+python AlignmentProcessor.py --axt --kaks --ucsc -r green_anole \
 -i test.fa -o test/
 
 It should procude a text file with 17 lines.

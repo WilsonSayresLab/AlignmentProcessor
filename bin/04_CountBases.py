@@ -3,17 +3,7 @@ retains a certain percentage of its nucleotide sequence. If not, it will remove
 that sequence.
 
 
-    AlignmentProcessor0.6 Copyright 2016 by Shawn Rupp
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License (GPL3.txt) for more details.'''
+    Copyright 2016 by Shawn Rupp'''
 
 from sys import argv
 from glob import glob
@@ -82,7 +72,7 @@ output file if they compose greater than the cutoff threshold of the sequence'''
 
 def main():
     if argv[1] == "-h" or argv[1] == "--help":
-        print("Usage: python 05_CountBasesOnDir.py \
+        print("Usage: python 05_CountBases.py \
 <threshold percentage as a decimal> <path to inut and output directories>")
         quit()
     else:

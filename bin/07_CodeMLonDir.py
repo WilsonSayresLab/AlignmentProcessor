@@ -1,17 +1,7 @@
 '''This program will run CodeML on a directory of single gene alignments.
 
 
-    AlignmentProcessor0.6 Copyright 2016 by Shawn Rupp
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License (GPL3.txt) for more details.'''
+    Copyright 2016 by Shawn Rupp'''
 
 from sys import argv
 from glob import glob
@@ -36,15 +26,14 @@ def runCodeML(ctl, path):
                         temp.write("\toutfile = " + outfile + ".mlc\n")
                     else:
                         temp.write(line)
-        cm = Popen(split("./bin/paml4.8/bin/codeml " + tempctl))
+        cm = Popen(split("./bin/paml/bin/codeml " + tempctl))
         cm.wait()
         os.remove(tempctl)
-
 
 def main():
     if argv[1] == "-h" or argv[1] == "--help":
         print("Usage: python 07_CodeMLonDir.py <path to codeml control file> \
-<path to input and output directorie>")
+<path to input and output directories>")
         quit()
     else:
         ctl = argv[1]
