@@ -40,7 +40,7 @@ def changeNames(header):
     with open("bin/02_nameList.txt", "r") as nameList:
         # Create dictionary of species names from file
         for line in nameList:
-            speciesDict[line.split()[0]] = line.split()[1].rstrip()            
+            speciesDict[line.split("\t")[0]] = line.split()[1].rstrip()            
     # Compare the build name against the species dictionary. If it is matched
     # to a key, return the value (the common name).
         if build in speciesDict:

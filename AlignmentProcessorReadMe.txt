@@ -8,16 +8,16 @@
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License (GPL3.txt) for more details.
+    GNU General Public License for more details.
 
 
 ###############################################################
-# AlignmentProcessor0.7 Package
+# AlignmentProcessor0.8 Package
 #
 #	Dependencies:	Python 3
 #			Python 3 version of Biopython
 #			Perl
-#			PAML (comes packaged with Linux binaries)
+#			PAML 
 ###############################################################
 
 ### Contents ###
@@ -55,18 +55,16 @@ a terminal and Anaconda will install Biopython for you:
 
 # KaKs_Calculator
 
-AlignmentProcessor0.7 is packaged with KaKs_Calculator2.0 binaries for Linux
+AlignmentProcessor0.8 is packaged with KaKs_Calculator2.0 binaries for Linux
 and Windows, and a KaKs_Calculator1.2 binary for Mac (there is no 2.0 binary
 available for OSX). Before using, copy or move the appropriate binary for your
 system into the AlignmentProcessor bin which contains the python scipts.
 
 # PAML 4.8
 
-AlignmentProcessor0.7 comes packaged with Linux binaries of PAML 4.8. If you 
-are using Mac or Windows, you will have to replace the Linux binaries with the
-appropriate package for you system 
-(http://abacus.gene.ucl.ac.uk/software/paml.html). Make sure that it is 
-titled "paml".
+If you plan to use CodeML, you must first download PAML 
+(http://abacus.gene.ucl.ac.uk/software/paml.html) and move the folder into the
+AlignmentProcessor directory. Make sure that it is titled "paml".
 
 #-------------------------------
 # 1. Obtaining a fasta alignment
@@ -136,19 +134,11 @@ in the bin/ directory.
 
 # Example Usage: 
 
-	python AlignmentProcessor.py -% <decimal> \
+	python AlignmentProcessor.py -% <decimal> --retainStops \
 		--axt/phylip --kaks/codeml --ucsc -i <input fasta file> \
 		-o <path to output directory> -r <reference species>
 
 # Required Arguments:
-	
-	--axt/phylip	Specifies which format to convert the files into and 
-			which program to use to calculate substitution rates 
-			(kaks will tell the prgram to convert files into axt 
-			format and optionally run KaKs_Calculator; phylip will 
-			convert files into phylip format for other programs;
-			both commands may be run at once).
-
 
 	-i	the path to your input fasta alignment.
 	-o	the path to your working/output directory.
@@ -158,7 +148,11 @@ in the bin/ directory.
 
 	--ucsc	This will invoke 00_convertHeader.py, which will convert the 
 		headers from UCSC fasta files so they only contain build
-		nmaes and gene IDs. 
+		names and gene IDs. 
+	
+	--axt/phylip	Specifies which format to convert the files into 
+			(axt format for KaKs_Calculator; phylip for CodeML 
+			or other programs; both commands may be run at once).
 
 	--kaks	will run KaKs_Calculator (you much also specify --axt, 
 		otherwise it will not run). Otherwise the program will quit 
@@ -166,29 +160,45 @@ in the bin/ directory.
 
 	--codeml	will run codeml on all of the files in the 
 			06_phylipFiles directory. You must also supply a 
-			control file for PAML which must be located in the 
+			control file for CodeML which must be located in the 
 			output directory you specified with the the -o option.
 			This file must be titled "codeml.ctl" (the default 
 			name given by PAML. The name is hard coded into
 			AlignmentProcessor to simplify the commands). 
 
+	--retainStops	This will tell AlignmentProcessor to retain sequences
+			that contain internal stop codons. By default,
+			sequences with internal stop codons will be removed 
+			from the analysis.
+
 	-%	a decimal value specifying the minimum percentage of reads 
 		that must remain after replacing unknown codons with gaps 
 		(Default = 0.5). You may wish to use a lower threshold
 		for highly diverged species or for low quality genomes.
+
+# Additional Commands
 	
 	-h/--help	will print the program's help dialogue
 
 	-v/--version	will print the program version and copywright info
 
-# The -r option
+	--printNameList	will print the contents of 02_nameList.txt which 
+			contains the list of genome builds and associated 
+			common names.
 
-	This specifies the reference species. To find it, look in 
-	02_nameList.txt in the bin. Check if the genome build is present
-	in column 1 of the list. If it is, use the common name in column 2 of 
-	the list. If it is not,	you may add an entry to the list with the 
+	--addNameToList will add an entry to the 02_nameList.txt file.
+e.g. python AlignmentProcessor.py -- addNameToList <build> <common name>
+				
+
+# Genome Builds and Common Names
+
+	This specifies the reference species. To find it, either use the 
+	--printNameList option or look in 02_nameList.txt in the bin. Check if
+	the genome build is present in column 1 of the list. If it is, use the
+	common name in column 2 of the list. If it is not, you may either use
+	the --addNameToList option or add an entry to the file with the 
 	build name that is present in your alignment as the first entry of a 
-	new row, followed by a space, then the desired common name. Make sure 
+	new row, followed by a tab, then the desired common name. Make sure 
 	there are no spaces in either name.
 
 # The codeml control file
@@ -205,12 +215,12 @@ in the bin/ directory.
 
 # Invoking the Ka/Ks pipeline with a UCSC alignment:
 
-	python AlignmentProcessor0.7.py --axt --kaks --ucsc -r green_anole \
+	python AlignmentProcessor0.8.py --axt --kaks --ucsc -r green_anole \
 	-i anolis_gallus.fa -o pairwiseKaKs/
 
 # Invoking the CodeML pipeline with a de novo alignment:
 
-	python AlignmentProcessor0.7.py --phylip --codeml -% 0.6 \
+	python AlignmentProcessor0.8.py --phylip --codeml -% 0.6 \
 	-r green_anole -i anolis_gallus.fa -o codemlOutput/
 
 #-------------------------------
@@ -283,6 +293,11 @@ Remember that the order of the arguments does matter for these scripts.
 	programs will not run properly if they enounter a premature stop
 	codon.
 
+	Terminal stop codons will be replaced, while sequences with internal 
+	stop codons will have their gene id, as well sequence name and 
+	location of the first occuring stop codon, recorded in the 
+	internalStops.txt file. 
+
 	python 05_ReplaceStopCodonsOnDir.py <number of species> \
 		<path to inut and output directories>
 
@@ -323,9 +338,9 @@ Remember that the order of the arguments does matter for these scripts.
 
 # 08_compileKaKs_CSV.py
 
-	This script concatonates the output from KaKs_Calculator into one csv
+	This script concatonates the output from KaKs_Calculator into a text
 	file. It adds a column for gene (or sequence) IDs, and prints the gene
-	ID from the filename. 
+	ID from the filename.
 
 	python compileCSV.py <path to inut and output directories>
 
@@ -365,7 +380,7 @@ simultaneously, as this could require too much memory.
 Change directory into the AlignmentProcessor folder. Paste the followig into
 a terminal (change the output directory to the desired loaction):
 
-python AlignmentProcessor.py --axt --kaks --ucsc -r green_anole \
+python AlignmentProcessor.py --axt --kaks --ucsc -r Green_anole \
 -i test.fa -o test/
 
-It should produce a text file with 17 lines.
+This will return a text file with 11 lines.
