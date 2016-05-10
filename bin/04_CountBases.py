@@ -8,29 +8,46 @@ that sequence.
 from sys import argv
 from glob import glob
 from Bio import AlignIO
+from collections import OrderedDict
 import os
 
 def openFiles(percent, path):
     '''Opens all input files in the directory'''
-    inpath = path + "03_checkFrame/" + "*.checkFrame"
-    files = glob(inpath)
-    for file in files:
-        proceed = False
-        with open(file, "r") as infile:
-            filename = file.split("/")[-1]
-            # Extract number of sequnces from file name
-            n = int(filename.split(".")[1])
-            # Create output file:
-            outfile = (path + "04_countBasesPercent/" + filename.split(".")[0]
-                       + "." + str(n) + ".countBases")
-            proceed, seqs = seqDict(infile, n)
-            if proceed == True:
-                countBases(n, seqs, percent, outfile)
+    log = path + "Logs/04_CountBasesLog.txt"
+    total = 0
+    excluded = 0
+    with open(log, "w") as runlog:
+        runlog.write("Genes with fewer than two remaining sequences\n")
+        inpath = path + "03_checkFrame/" + "*.checkFrame"
+        files = glob(inpath)
+        for file in files:
+            proceed = False
+            with open(file, "r") as infile:
+                filename = file.split("/")[-1]
+                # Extract number of sequnces from file name
+                n = int(filename.split(".")[1])
+                # Create output file:
+                outfile = (path + "04_countBasesPercent/" +
+                           filename.split(".")[0] + "." + str(n) +
+                           ".countBases")
+                proceed, seqs = seqDict(infile, n)
+                if proceed == True:
+                    total += 1
+                    ex = countBases(n, seqs, percent, outfile)
+                    if ex == 1:
+                        excluded += 1
+                        runlog.write(filename.split(".")[0] + "\n")
+        # Write out total number of genes written and excluded
+        runlog.write("\n")
+        runlog.write("Total genes written to file: " + str(total - excluded)
+                     + "\n")
+        runlog.write("Total genes with fewer than two remaining sequences: " +
+                     str(excluded) + "\n")
 
 def seqDict(infile, n):
     '''Converts fasta into separate sequence objects, determine sequence names
     and create dictionary entries for each set of codons'''
-    seqs = {}
+    seqs = OrderedDict()
     alignment = AlignIO.parse(infile, "fasta", seq_count=n)
     try:
         for item in alignment:
@@ -68,8 +85,10 @@ output file if they compose greater than the cutoff threshold of the sequence'''
     # Delete output file if it does not have at least two sequences
     if count < 2:
         os.remove(outfile)
+        return 1
+    else:
+        return 0 
             
-
 def main():
     if argv[1] == "-h" or argv[1] == "--help":
         print("Usage: python 05_CountBases.py \

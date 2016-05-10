@@ -1,5 +1,5 @@
 '''compileKaKs will concatenate the output files of KaKs_Calculator into
-a single tsv file.
+a single text file.
 
 
     Copyright 2016 by Shawn Rupp'''
@@ -8,12 +8,12 @@ from sys import argv
 from glob import glob
 
 def compileKsKs(path):
-    '''Prints Ka/Ks output as a single tsv file.'''
+    '''Prints Ka/Ks output as a single text file.'''
     # Set counter so the header is only printed once
     count =  0
     inpath = path + "07_KaKsOutput/" + "*.kaks"
     files = glob(inpath)
-    outfile = path + "KaKs.tsv"
+    outfile = path + "KaKs.txt"
     # Open input and output files
     with open(outfile, "w") as output:
         for file in files:

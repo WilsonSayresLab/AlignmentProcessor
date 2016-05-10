@@ -69,7 +69,7 @@ def makeDir(path, outdir, axt, phylip):
     '''Makes all sub-directories used by program.'''
     os.chdir(outdir)
     for i in ["01_splitFastaFiles", "02_rmHeader", "03_checkFrame",
-              "04_countBasesPercent", "05_ReplaceStopCodons"]:
+              "04_countBasesPercent", "05_ReplaceStopCodons", "Logs"]:
         try:
             os.mkdir(i)
         except FileExistsError:
@@ -142,8 +142,12 @@ def countBases(outdir, percent):
 def replaceStop(outdir, retainStops):
     '''Removes stop codons for downstream analysis.'''
     print("Removing stop codons...")
-    rs = Popen(split("python bin/05_ReplaceStopCodons.py " + " "
-                     + outdir + " " + str(retainStops)))
+    if retainStops == False:
+        rs = Popen(split("python bin/05_ReplaceStopCodons.py " + " "
+                     + outdir))
+    elif retainStops == True:
+        rs = Popen(split("python bin/05_ReplaceStopCodons.py " + " "
+                     + outdir + " retainStops"))
     rs.wait()
     if rs.returncode == 0:
         return True
@@ -192,8 +196,7 @@ def phylipConvert(outdir, starttime, codeml):
 def runcodeml(outdir, starttime):
     '''Runs codeml on a directory.'''
     print("Running codeml...")
-    cm = Popen(split("python bin/07_CodeMLonDir.py " + outdir + "codeml.ctl "
-                     + outdir))
+    cm = Popen(split("python bin/07_CodeMLonDir.py " + outdir))
     cm.wait()
     if cm.returncode == 0:
         elapsedtime = datetime.now() - starttime
@@ -207,6 +210,10 @@ produce trimmed axt files for use with KaKs_calculator. ###")
     print("    example usage: python AlignmentProcessor.py -% <decimal> \
 --axt/phylip --kaks/codeml -i <input fasta file> -o \
 <path to output directory> -r <reference species>")
+    print("    --printNameList    prints list of genome build names and\
+ associated common names")
+    print("    --addNameToList    add new genome build name and\
+ associated common name to list")
     print("    --axt    Converts files to axt for use in KaKs_Calcuator.")
     print("    --phylip   Converts files to phylip for use in PhyML.")
     print("    --kaks     Runs KaKs_Calcuator if --axt is also specified")
@@ -236,6 +243,7 @@ def main():
     codeml = False
     conv = False
     percent = "0.5"
+    ref = "void"
     # Extract values from command line:
     for i in argv:
         if i == "-h" or i == "--help":
@@ -274,6 +282,11 @@ def main():
         elif i == "--retainStops":
             retainStops = True
     # Check inout commands prior to running:
+    if ref == "void":
+        print()
+        print("\tPlease pecify a reference species.")
+        print()
+        quit()
     checkInput(axt, kaks, phylip, codeml)
     # Save working directory to variable to call other scripts:
     path = os.getcwd()

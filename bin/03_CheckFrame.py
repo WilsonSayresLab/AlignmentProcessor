@@ -25,6 +25,7 @@
 from sys import argv
 from glob import glob
 from Bio import AlignIO
+from collections import OrderedDict
 
 def openFiles(path, ref):
     '''Opens all input files in the directory and creates output file names'''
@@ -49,7 +50,7 @@ def openFiles(path, ref):
 def seqDict(infile, n):
     '''Convert fasta into separate sequence objects, determine sequence names
     and create dictionary entries for each set of codons'''
-    seqs = {}
+    seqs = OrderedDict()
     alignment = AlignIO.parse(infile, "fasta", seq_count=n)
     try:
         for item in alignment:

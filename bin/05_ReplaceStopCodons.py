@@ -12,39 +12,51 @@ Note: This assumes prior filtering has been done so that:
 from sys import argv
 from glob import glob
 from Bio import AlignIO
+from collections import OrderedDict
 import os
 
 def openFiles(path, retainStops):
     '''Open all input files in the directory'''
-    internalStops = path + "internalStops.txt"
-    with open(internalStops, "w") as stops:
-        stops.write("Gene\tSpecies\n")
-    inpath = path + "04_countBasesPercent/" + "*.countBases"
-    files = glob(inpath)
-    for file in files:
-        with open(file, "r") as infile:
-	    # Determine number of remaining sequences per file
-            n = 0
-            for line in infile:
-                if line[0] == ">":
-                    n += 1
-        with open(file, "r") as infile:
-            filename = file.split("/")[-1]
-            geneid = filename.split(".")[0]
-            # Create output file:
-            outfile = (path + "05_ReplaceStopCodons/" + geneid
-                       + "." + str(n) + ".rmStops")
-            # Call functions
-            seqs = seqDict(infile, n)
-            count, newseqs = removeStops(n, geneid, seqs, internalStops,
-                                     retainStops)
-            writeSeqs(count, newseqs, outfile, retainStops)
+    log = path + "Logs/05_ReplaceStopCodonsLog.txt"
+    with open(log, "w") as runlog:
+        runlog.write("Genes excluded Due to Premature Stop Codons\n")
+        total = 0
+        excluded = 0
+        internalStops = path + "internalStops.txt"
+        with open(internalStops, "w") as stops:
+            stops.write("Gene\tSpecies\n")
+        inpath = path + "04_countBasesPercent/" + "*.countBases"
+        files = glob(inpath)
+        for file in files:
+            with open(file, "r") as infile:
+                # Determine number of remaining sequences per file
+                n = 0
+                for line in infile:
+                    if line[0] == ">":
+                        n += 1
+            with open(file, "r") as infile:
+                filename = file.split("/")[-1]
+                geneid = filename.split(".")[0]
+                # Call functions
+                seqs = seqDict(infile, n)
+                count, newseqs = removeStops(n, geneid, seqs, internalStops,
+                                         retainStops)
+                total += 1
+                ex = writeSeqs(count, newseqs, path, geneid, retainStops)
+                if ex == 1:
+                    excluded += 1
+                    runlog.write(geneid + "\n")
+        # Write out total number of genes written and excluded
+        runlog.write("\n")
+        runlog.write("Total genes written to file: " + str(total - excluded)
+                     + "\n")
+        runlog.write("Total genes excluded: " + str(excluded) + "\n")
 
 def seqDict(infile, n):
     '''Converts fasta into separate sequence objects, determines sequence names,
     and creates dictionary entries for each set of codons. Also replaces
     terminal stop codons with gaps.'''
-    seqs = {}
+    seqs = OrderedDict()
     alignment = AlignIO.parse(infile, "fasta", seq_count=n)
     try:
         for item in alignment:
@@ -69,6 +81,7 @@ def removeStops(n, geneid, seqs, internalStops, retainStops):
     '''This will replace internal stop codons with gaps, create a list
 of genes with internal stop codons, and remove those sequences.'''
     count = n
+    remove = []
     try:
         for species in seqs:
             record = True
@@ -80,21 +93,25 @@ of genes with internal stop codons, and remove those sequences.'''
                             stops.write(geneid + "\t" + species + "\n")
                         record = False
                         count -= 1
+                        remove.append(species)
                     if retainStops == True:
+                        # Replace stops with dashes
                         seqs[species][idx] = "---"
-        if retainStops == "False":
-            if record == False:
-                # Remove sequence from alignment
-                seqs.pop(species)
+        if retainStops == False:
+            for species in remove:
+                del seqs[species]
         return count, seqs
     except TypeError:
         pass
     
-def writeSeqs(count, newseqs, outfile, retainStops):
+def writeSeqs(count, newseqs, path, geneid, retainStops):
     '''Writes output files if there at least two sequences remaining.'''
+    # Create output file:
+    outfile = (path + "05_ReplaceStopCodons/" + geneid
+                + "." + str(count) + ".rmStops")
     with open(outfile, "w") as output:
-        if retainStops == "False":
-            if count >= 2:
+        if retainStops == False:
+            if count > 1:
                 # Write out sequence if at least 2 sequences remain
                 for species in newseqs:
                     output.write(">" + str(species) + "\n")
@@ -102,7 +119,11 @@ def writeSeqs(count, newseqs, outfile, retainStops):
                     for codon in newseqs[species]:
                         seq += str(codon)
                     output.write(seq + "\n")
-        elif retainStops == "True":
+                return 0
+            else:
+                os.remove(outfile)
+                return 1
+        elif retainStops == True:
             # Write out all sequences
             for species in newseqs:
                 output.write(">" + str(species) + "\n")
@@ -110,15 +131,21 @@ def writeSeqs(count, newseqs, outfile, retainStops):
                 for codon in newseqs[species]:
                     seq += str(codon)
                 output.write(seq + "\n")
+            return 0
 
 def main():
     if argv[1] == "-h" or argv[1] == "--help":
         print("Usage: python 05_ReplaceStopCodons.py \
-<path to inut and output directories> <True/False>")
+<path to inut and output directories> <--retainStops>")
         quit()
     else:
+        retainStops = False
         path = argv[1]
-        retainStops = argv[2]
+        try:
+            if argv[2] == "--retainStops":
+                retainStops = True
+        except IndexError:
+            pass
         openFiles(path, retainStops)
 
 if __name__ == "__main__":

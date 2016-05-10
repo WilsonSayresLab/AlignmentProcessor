@@ -15,6 +15,7 @@ def removeHeader(path):
     inpath = path + "01_splitFastaFiles/" + "*.fa"   
     files = glob(inpath)   
     for file in files:
+        n = 0
         with open(file, "r") as infile:
             filename = file.split("/")[-1]
             # Create output file

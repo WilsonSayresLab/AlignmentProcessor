@@ -18,7 +18,7 @@ def calculateKaKs(path):
         with open(file, "r") as infile:
             filename = file.split("/")[-1]
             # Create output file
-            outfile = (path + "07_KaKsOutput/" + filename.split(".")[0]
+            outfile = (path + "KaKsOutput/" + filename.split(".")[0]
                        + ".kaks")
             ck = Popen(split("bin/KaKs_Calculator -i " + file + " -o " +
                              outfile + " -m NG"))
