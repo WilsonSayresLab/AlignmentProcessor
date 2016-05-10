@@ -193,10 +193,14 @@ def phylipConvert(outdir, starttime, codeml):
             print("Total runtime: ", elapsedtime)
         return True
 
-def runcodeml(outdir, starttime):
+def runcodeml(outdir, retainStops, starttime):
     '''Runs codeml on a directory.'''
     print("Running codeml...")
-    cm = Popen(split("python bin/07_CodeMLonDir.py " + outdir))
+    if retainStops == False:
+        cm = Popen(split("python bin/07_CodeMLonDir.py " + outdir))
+    elif retainStops == True:
+        cm = Popen(split("python bin/07_CodeMLonDir.py " + outdir +
+                         "--retainStops"))
     cm.wait()
     if cm.returncode == 0:
         elapsedtime = datetime.now() - starttime
@@ -336,7 +340,7 @@ def main():
             # Run codeml
             if codeml == True and kaks == False:
                 if pc == True:
-                    runcodeml(outdir, starttime)
+                    runcodeml(outdir, retainStops, starttime)
 
 if __name__ == "__main__":
     main()

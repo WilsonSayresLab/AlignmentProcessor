@@ -69,7 +69,7 @@ def readIn(path):
                 rmseqs[splt[0]] = [str(splt[1]).rstrip(), ]
     return usertree, nodes, ctl, rmseqs
 
-def runCodeML(usertree, path, ctl, rmseqs, nodes):
+def runCodeML(usertree, path, ctl, rmseqs, nodes, retainStops):
     '''Runs CodeML on all files in a directory using temporary controlfiles.'''
     # Open all input files in the directory
     inpath = path + "06_phylipFiles/" + "*.phylip"   
@@ -79,7 +79,7 @@ def runCodeML(usertree, path, ctl, rmseqs, nodes):
         geneid = filename.split(".")[0]
         outfile = path + "07_codeml/" + geneid
         tempctl = path + "07_codeml/tmp.ctl"
-        if usertree == True:
+        if retainStops == False and usertree == True:
             # Prune tree only if it will be used
             pruneTree(path, geneid, rmseqs, nodes)
         with open(tempctl, "w") as temp:
@@ -145,12 +145,18 @@ def main():
         print("Usage: python 07_CodeMLonDir.py <path to codeml control file>")
         quit()
     else:
+        retainStops = False
         path = argv[1]
         # Set directory names and add a trailing "/" if necessary
         if path[-1] != "/":
             path += "/"
+        try:
+            if argv[2] == "--retainStops":
+                retainStops = True
+        except IndexError:
+            pass
         usertree, nodes, ctl, rmseqs = readIn(path)
-        runCodeML(usertree, path, ctl, rmseqs, nodes)
+        runCodeML(usertree, path, ctl, rmseqs, nodes, retainStops)
 
 if __name__ == "__main__":
     main()

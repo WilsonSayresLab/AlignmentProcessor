@@ -372,7 +372,8 @@ Remember that the order of the arguments does matter for these scripts.
 	so that it only includes species which have not been filtered out.
 
 	python 07_CodeMLonDir.py <path to codeml control file> \
-		<path to input and output directories>
+		<path to input and output directories> \
+		--retainStops(optional)
 
 3 07_pruneTree.R
 
