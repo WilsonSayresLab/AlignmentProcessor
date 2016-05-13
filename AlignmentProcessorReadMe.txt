@@ -243,9 +243,11 @@ in the bin/ directory.
 	but trimmed to ten characters (some programs still set a ten character
 	limit on the length of names, so AlignmentProcessor trims the names). 
 	The 07_CodeMLonDir.py script will save any nodes you have specified 
-	before sending a plain Newick tree to ape (which will not work if 
-	there are PAML node symbols). It will then add any nodes back into the
-	tree after it has been trimmed.
+	with a "#" before sending a plain Newick tree to ape (which will not 
+	work if there are PAML node symbols). It will then add any nodes back 
+	into the tree after it has been trimmed. AlignmentProcessor will not 
+	currently save nodes specified with "$" since it is difficult to 
+	determine where a nested clade begins and ends.
 
 # Invoking the Ka/Ks pipeline with a UCSC alignment:
 
