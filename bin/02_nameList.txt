@@ -1,4 +1,4 @@
-Aapl1	Anolis_apletophallus
+Aapl1	Slender_anole
 Aaur1	Grass_anole
 Afre1	Bridled_anole
 ailMel1	Panda

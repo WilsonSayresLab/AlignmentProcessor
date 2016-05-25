@@ -7,8 +7,8 @@
 #	Required Programs:	R
 #				ape
 #
-# usage: Rscript 07_pruneTree.R <path to output directory> 
-#   <path to tree file> <species to be excluded>
+# usage: Rscript 07_pruneTree.R <path to input tree file> 
+#   <path to output tree> <species to be excluded>
 #
 #	Copyright 2016 by Shawn Rupp
 #############################################################
@@ -16,14 +16,14 @@
 # Catch arguments passed to R
 args <- commandArgs(trailingOnly=TRUE)
 
-path <- args[1]
-tree <- args[2]
+tree <- args[1]
+outfile <- args[2]
 exclude <- args[3]
 
 # Load the ape package
-library(ape)
+library("ape")
 
 # Read tree, prune extra branches, and write to file
 intree <- read.tree(tree)
 prunedtree <- drop.tip(intree,exclude)
-write.tree(prunedtree, file.path(path, "pruned.tree"))
+write.tree(prunedtree, outfile)

@@ -112,10 +112,14 @@ def splitFasta(fasta, outdir):
     if sf.returncode == 0:
         return True
 
-def rmHeader(outdir):
+def rmHeader(outdir, commonNames):
     '''Removes header information and changes genome build to common name.'''
     print("Changing header...")
-    rh = Popen(split("python bin/02_RemoveHeader.py " + outdir))
+    if commonNames == False:
+        rh = Popen(split("python bin/02_RemoveHeader.py " + outdir))
+    elif commonNames == True:
+        rh = Popen(split("python bin/02_RemoveHeader.py " + outdir +
+                         "--changeNames"))
     rh.wait()
     if rh.returncode == 0:
         return True
@@ -193,14 +197,15 @@ def phylipConvert(outdir, starttime, codeml):
             print("Total runtime: ", elapsedtime)
         return True
 
-def runcodeml(outdir, retainStops, starttime):
+def runcodeml(cpu, outdir, retainStops, starttime):
     '''Runs codeml on a directory.'''
     print("Running codeml...")
     if retainStops == False:
-        cm = Popen(split("python bin/07_CodeMLonDir.py " + outdir))
+        cm = Popen(split("python bin/07_CodeMLonDir.py -i " + outdir
+                         + " -n " + cpu))
     elif retainStops == True:
-        cm = Popen(split("python bin/07_CodeMLonDir.py " + outdir +
-                         "--retainStops"))
+        cm = Popen(split("python bin/07_CodeMLonDir.py -i " + outdir +
+                         " --retainStops -n " + cpu))
     cm.wait()
     if cm.returncode == 0:
         elapsedtime = datetime.now() - starttime
@@ -240,12 +245,15 @@ directory to run the program.###")
 def main():
     starttime = datetime.now()
     # Set optional parameters to False:
-    axt = False
+    commonNames = False
     retainStops = False
+    axt = False
     phylip = False
     kaks = False
     codeml = False
     conv = False
+    # Popen requires string input, so the following are typecast as strings
+    cpu = "1"
     percent = "0.5"
     ref = "void"
     # Extract values from command line:
@@ -283,6 +291,10 @@ def main():
             codeml = True
         elif i == "--ucsc":
             conv = True
+        elif i == "-n":
+            cpu = str(argv[argv.index(i) + 1])
+        elif i == "--changeNames":
+            commonNames = True
         elif i == "--retainStops":
             retainStops = True
     # Check inout commands prior to running:
@@ -316,7 +328,7 @@ def main():
         else:
             sf = splitFasta(fasta, outdir)
         if sf == True:
-            rh = rmHeader(outdir)
+            rh = rmHeader(outdir, commonNames)
         if rh == True:
             cf = checkFrame(outdir, ref)
         if cf == True:
@@ -340,7 +352,7 @@ def main():
             # Run codeml
             if codeml == True and kaks == False:
                 if pc == True:
-                    runcodeml(outdir, retainStops, starttime)
+                    runcodeml(cpu, outdir, retainStops, starttime)
 
 if __name__ == "__main__":
     main()

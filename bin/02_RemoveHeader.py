@@ -10,7 +10,7 @@
 from sys import argv
 from glob import glob
 
-def removeHeader(path):
+def removeHeader(path, commonNames):
     # Open all input files in the directory
     inpath = path + "01_splitFastaFiles/" + "*.fa"   
     files = glob(inpath)   
@@ -25,7 +25,11 @@ def removeHeader(path):
                     if line[0] == ">":
 			# Split header to get build name and remove extra info
                         header = line.split(".")
-                        name = changeNames(header[0])
+                        # Replace build name with common name
+                        if commonNames == True:
+                            name = changeNames(header[0])
+                        elif commonNames == False:
+                            name = header[0][1:]
 			# Write common name to file
                         output.write(">" + str(name) + "\n")
                     else:
@@ -56,9 +60,15 @@ def main():
 <path to inut and output directories>")
         quit()
     else:
+        commonNames = False
         # Set directory names and add a trailing "/" if necessary
         path = argv[1]
-        removeHeader(path)
+        try:
+            if argv[2] == "--changeNames":
+                commonNames = True
+        except IndexError:
+            pass
+        removeHeader(path, commonNames)
 
 if __name__ == "__main__":
     main()

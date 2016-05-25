@@ -162,7 +162,7 @@ in the bin/ directory.
 
 	-i	the path to your input fasta alignment.
 	-o	the path to your working/output directory.
-	-r	the common name of your reference species (more below).
+	-r	the build or common name of your reference species (more below).
 
 # Optional Arguments:
 
@@ -170,6 +170,21 @@ in the bin/ directory.
 		headers from UCSC fasta files so they only contain build
 		names and gene IDs. This does not need to be run on Stich Gene
 		Blocks output.
+
+	--retainStops	This will tell AlignmentProcessor to retain sequences
+			that contain internal stop codons. By default,
+			sequences with internal stop codons will be removed 
+			from the analysis as they may bias the results.
+
+	--changeNames	Tells the program to change genome build names to 
+			commom names (more below).
+
+	-%	a decimal value specifying the minimum percentage of reads 
+		that must remain after replacing unknown codons with gaps 
+		(Default = 0.5). You may wish to use a lower threshold
+		for highly diverged species or for low quality genomes.
+
+	# Ka/Ks_Calculator/CodeML related arguments
 	
 	--axt/phylip	Specifies which format to convert the files into 
 			(axt format for KaKs_Calculator; phylip for CodeML 
@@ -186,15 +201,10 @@ in the bin/ directory.
 			This file must be titled "codeml.ctl" (the default 
 			name given by PAML). 
 
-	--retainStops	This will tell AlignmentProcessor to retain sequences
-			that contain internal stop codons. By default,
-			sequences with internal stop codons will be removed 
-			from the analysis as they may bias the results.
-
-	-%	a decimal value specifying the minimum percentage of reads 
-		that must remain after replacing unknown codons with gaps 
-		(Default = 0.5). You may wish to use a lower threshold
-		for highly diverged species or for low quality genomes.
+	-n	if "--codeml" is selected, you may specify the number of CPUs 
+		to run CodeML. CodeML itself cannot be parallelized, but 
+		AlignmentProcessor can call multiple instances of CodeML to
+		shorten overall run time. (Default = 1)
 
 # Additional Commands
 	
@@ -431,7 +441,7 @@ memory.
 Change directory into the AlignmentProcessor folder. Paste the followig into
 a terminal:
 
-python AlignmentProcessor.py --axt --kaks --ucsc -r Green_anole \
+python AlignmentProcessor.py --axt --kaks --ucsc -r anoCar2 \
 -i kaksTest.fa -o test/
 
 This will return a text file with 11 lines.
@@ -441,7 +451,7 @@ The test directory already contains sample CodeML control and tree files, so
 all you need  to do is change into the AlignmentProcessor direcotry and paste
 the following:
 
-python AlignmentProcessor.py --phylip --codeml --ucsc -r Green_anole \
+python AlignmentProcessor.py --phylip --codeml --ucsc -n 2 -r anoCar2 \
 -i codemlTest.fa -o test/
 
 There should be 8 .mlc files in the 07_codeml directory.
