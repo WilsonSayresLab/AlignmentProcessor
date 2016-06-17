@@ -12,17 +12,16 @@
 
 
 ###############################################################
-# AlignmentProcessor0.11 Package
-#
-#	Dependencies:	Python 3
-#			Python 3 version of Biopython
-#			Perl (if using KaKs_Calculator)
-#			PAML (if using CodeML)
-#			R (if using CodeML)
-#			ape R package (if using CodeML)
+ AlignmentProcessor0.11 Package
+
+	Dependencies:	Python 3
+			Python 3 version of Biopython
+			Perl (if using KaKs_Calculator)
+			PAML (if using CodeML)
+			R (if using CodeML)
+			ape R package (if using CodeML)
 ###############################################################
 
-### Contents ###
 0. Introduction
 1. Obtaining a fasta alignment
 2. Running AlignmentProcessor
@@ -30,9 +29,9 @@
 4. Outputs
 5. Test
 
-#-------------------------------
+
 # 0. Introduction
-#-------------------------------
+
 
 AlignmentProcessor is a pipeline meant to quickly convert a multi-fasta 
 alignment file into a format that can be read by KaKs_Calculator or PAML and 
@@ -94,9 +93,8 @@ To install ape, enter:
 	biocLite("ape")
 
 
-#-------------------------------
 # 1. Obtaining a fasta alignment
-#-------------------------------
+
 # UCSC Fasta Alignment
 It is possible to download CDS fasta alignments from the UCSC Table browser.
 This does, unfortunately, limit you to currently available alignments.
@@ -144,9 +142,7 @@ Since this method offer the most flexibility for working with alignments,
 AlignmentProcessor was written with this output format in mind and no further
 formatting is required.
 
-#-------------------------------
 # 2. Running AlignmentProcessor
-#-------------------------------
 
 AlignmentProcessor is designed to convert the file into a usable format and 
 run the substitutions quickly, so everything can be run with one command. Each
@@ -286,9 +282,7 @@ invoke KaKs_Calculator on the whole directory again.
 	python AlignmentProcessor0.11.py --phylip --codeml -% 0.6 \
 	-r anoCar2 -i anolis_gallus.fa -o codemlOutput/
 
-#-------------------------------
 # 3. Individual Scripts
-#-------------------------------
 
 Each script performs one or two functions on the input file or files, and 
 saves the output to a new subdirectory. The location of the working directory
@@ -299,14 +293,14 @@ not.
 
 Remember that the order of the arguments does matter for these scripts.
 
-# 00_ConvertHeader.py
+00_ConvertHeader.py
 
 	This script will convert headers for CDS fasta alignments from
 	UCSC to be in the format: >"build_name"."gene_ID" 
 
 	python convertHeader.py <path to input file>
 
-# 01_SplitFastaFiles.py
+01_SplitFastaFiles.py
 
 	This script will split the input multi-fasta alignment into one file
 	per gene. It will produce an output file for a gene if it has at least
@@ -315,7 +309,7 @@ Remember that the order of the arguments does matter for these scripts.
 	python 01_splitFastaFiles.py <input fasta alignment> \
 		<path to output directory>
 
-# 02_RemoveHeader.py
+02_RemoveHeader.py
 
 	This program will read through a directory that contains 
 	aligned multiple FASTA files and replace FASTA headers with each 
@@ -323,7 +317,7 @@ Remember that the order of the arguments does matter for these scripts.
 
 	python 02_RemoveHeaderOnDir.py 	<path to input and output directories>
 
-# 03_CheckFrame.py
+03_CheckFrame.py
 
 	This script removes gaps introduced in the reference sequence by the
 	alignment and removes corresponding sites in other species. It assumes
@@ -335,7 +329,7 @@ Remember that the order of the arguments does matter for these scripts.
 	python 03_CheckFrameOnDir.py <path to input and output directories> \
 		<reference_species>
 
-# 04_CountBases.py
+04_CountBases.py
 
 	This program will check a multiple FASTA file to see that each species
  	retains a certain percentage of its nucleotide sequence. If not, it 
@@ -348,7 +342,7 @@ Remember that the order of the arguments does matter for these scripts.
 	python 05_CountBasesOnDir.py <threshold percentage as a decimal> \
 		<path to input and output directories>
 
-# 05_ReplaceStopCodons.py
+05_ReplaceStopCodons.py
 
 	This program will remove the internal stop codons (TAA, TAG, TGA)
 	and replace with gaps (---) from the nucleotide alignment. Some 
@@ -365,7 +359,7 @@ Remember that the order of the arguments does matter for these scripts.
 	python 05_ReplaceStopCodonsOnDir.py \
 		<path to input and output directories> --retainStops(optional)
 
-# 06_FASTAtoAXT.py
+06_FASTAtoAXT.py
 
 	This program executes 06_parseFastaIntoAXT.pl on an entire directory,
 	allowing all of the contents of the directory to be converted to 
@@ -376,7 +370,7 @@ Remember that the order of the arguments does matter for these scripts.
 
 	python FASTAtoAXTonDirectory.py <path to input and output directories>
 
-# 06_FASTAtoPhylip.py
+06_FASTAtoPhylip.py
 
 	This program will convert all files in an input directory
  	from fasta format to a phylip format.
@@ -384,14 +378,14 @@ Remember that the order of the arguments does matter for these scripts.
 	python 07_FASTAtoPhylip.py <number of species> \
 		<path to input and output directories>
 
-# 07_KaKsonDir.py
+07_KaKsonDir.py
 
 	This program executes KaKs_Calculator on every file in a directory. 
 
 	python 07_KaKsonDirectory.py <path to input and output directories> \
 		<name of reference species>
 
-# 07_CodeMLonDir.py
+07_CodeMLonDir.py
 
 	This script will run codeml on every file in a directory. It requires
 	the codeml.ctl file, and likely a tree file which it will supply to
@@ -405,7 +399,7 @@ Remember that the order of the arguments does matter for these scripts.
 	python 07_CodeMLonDir.py <path to codeml control file> \
 		<path to input and output directories> 
 
-# 07_pruneTree.py
+07_pruneTree.py
 
 	This script will dynamically trim input trees for CodeML if any sequences
 	have been removed. Species whose sequences were removed in steps 4 or 5 
@@ -415,7 +409,7 @@ Remember that the order of the arguments does matter for these scripts.
 	python 07_pruneTree.py <path to input directory> \
 	<list of species remaining in alignment> <path to tmep output directory>
 
-# 08_compileKaKs.py
+08_compileKaKs.py
 
 	This script concatonates the output from KaKs_Calculator into a text
 	file. It adds a column for gene (or sequence) IDs, and prints the gene
@@ -423,9 +417,7 @@ Remember that the order of the arguments does matter for these scripts.
 
 	python compileCSV.py <path to input and output directories>
 
-#-------------------------------
 # 4. Outputs
-#-------------------------------
 
 A directory is created for each step, and, prior to the file conversion step, 
 each directory will contain a series of single-gene fasta alignments. These 
@@ -452,9 +444,7 @@ the files in a separate step. AlignmentProcessor will not, however, run
 KaKs_Calculator and CodeML simultaneously, as this could require too much 
 memory.
 
-#-------------------------------
 # 5. Run AlignmentProcessor on test data
-#-------------------------------
 
 # To test KaKs_Calculator:
 Change directory into the AlignmentProcessor folder. Paste the following into
