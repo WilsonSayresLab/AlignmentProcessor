@@ -19,27 +19,32 @@ def splitFasta(infile, path):
             n = 0
             for line in fasta:
                 if line != "\n":
-                    # Concatenate lines for each gene
+                    # Concatenate lines for all species for each gene
                     seq += str(line)
                     if line[0] == ">":
                         # Determine number of sequences and species names
                         n += 1
                         if newid == True:
-                            filename = str(line.split(".")[1])
+                            try:
+                                filename = str(line.split(".")[1]).rstrip()
+                            except IndexError:
+                                print(line)
                             newid = False
                 elif line == "\n" and newid == False:
+                    # Use empty lines to determine where genes end
                     if n >= 2:
                         # Print gene sequences to file if there are at least two
                         # species and reset for next gene
                         outfile = (path + "01_splitFastaFiles/" + filename + "."
                                     + str(n) + ".fa")
                         with open(outfile, "w") as output:
-                                output.write(seq)
-                                written += 1
+                            output.write(seq)
+                            written += 1
                         newid = True
                         seq = ""
                         n = 0
-                    else:
+                    elif n < 2:
+                        # Record genes with only one sequence
                         runlog.write(filename + "\n")
                         excluded += 1
         # Write out total number of genes written and excluded

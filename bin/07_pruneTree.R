@@ -16,14 +16,18 @@
 # Catch arguments passed to R
 args <- commandArgs(trailingOnly=TRUE)
 
-tree <- args[1]
+intree <- args[1]
 outfile <- args[2]
 exclude <- args[3]
+
+# Split exclude into species
+species <- strsplit(exclude, "-")[[1]]
+l <- length(species)
 
 # Load the ape package
 library("ape")
 
 # Read tree, prune extra branches, and write to file
-intree <- read.tree(tree)
-prunedtree <- drop.tip(intree,exclude)
-write.tree(prunedtree, outfile)
+tree <- read.tree(intree)
+pruned <- drop.tip(tree, c(species[1:l]), trim.internal=FALSE)
+write.tree(pruned, outfile)

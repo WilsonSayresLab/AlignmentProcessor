@@ -12,14 +12,14 @@
 
 
 ###############################################################
-# AlignmentProcessor0.8 Package
+# AlignmentProcessor0.11 Package
 #
 #	Dependencies:	Python 3
 #			Python 3 version of Biopython
-#			Perl
-#			PAML 
-#			R
-#			ape R package
+#			Perl (if using KaKs_Calculator)
+#			PAML (if using CodeML)
+#			R (if using CodeML)
+#			ape R package (if using CodeML)
 ###############################################################
 
 ### Contents ###
@@ -63,10 +63,10 @@ a terminal and Anaconda will install Biopython for you:
 
 # KaKs_Calculator
 
-AlignmentProcessor0.8 is packaged with KaKs_Calculator2.0 binaries for Linux
+AlignmentProcessor0.11 is packaged with KaKs_Calculator2.0 binaries for Linux
 and Windows, and a KaKs_Calculator1.2 binary for Mac (there is no 2.0 binary
 available for OSX). Before using, copy or move the appropriate binary for your
-system into the AlignmentProcessor bin which contains the python scipts.
+system into the AlignmentProcessor bin which contains the python scripts.
 
 # PAML 4.8
 
@@ -97,14 +97,14 @@ This does, unfortunately, limit you to currently available alignments.
 If they do have the alignment that you are interested in, however, it will 
 probably be faster to download it rather than generate a new one. Since this
 precludes the use of user-generated alignments, AlignmentProcessor has been 
-written for Galaxy's Stitch Gene Blocks ouput. If you choose to use UCSC 
+written for Galaxy's Stitch Gene Blocks output. If you choose to use UCSC 
 alignments, the sequence headers will have to be converted using the --ucsc 
 option.
 
 # User Generated Alignments
 Since most alignments are in maf format, you will have to convert your 
 alignment from maf to fasta. There seem to be very few programs that can do 
-this; fortunately Galaxy's Stich Gene blocks not only converts a maf to fasta,
+this; fortunately Galaxy's Stitch Gene blocks not only converts a maf to fasta,
 but it also separates sequences by genes, which is something we need to do 
 anyway.
 
@@ -123,9 +123,9 @@ the Get Data tab on the left of the screen). Select your species from the UCSC
 table browser, select Genes and Gene Predictions, ensembl genes, and the whole 
 genome. Select BED as the output format and check the send to Galaxy box.
 
-Once you have your data uploaded to Galaxy, select the Stich Gene Blocks tool 
+Once you have your data uploaded to Galaxy, select the Stitch Gene Blocks tool 
 under the Fetch Alignments/Sequences tab. Select your reference species' 
-genome BED file in the Gene BED file dropdown menu. Change MAF Sourse to the 
+genome BED file in the Gene BED file drop down menu. Change MAF Source to the 
 maf file you uploaded (you may also use a locally catched alignment if it is 
 available for all of your species of interest). Select the desired species 
 IDs, leave Split into Gapless MAF Blocks to "no" (we will deal with gaps 
@@ -135,14 +135,14 @@ output file.
 This process will take a few hours, so plan accordingly.
 
 Since this method offer the most flexibility for working with alignments, 
-AlignmentProcessor was wrtien with this output format in mind and no further
+AlignmentProcessor was written with this output format in mind and no further
 formatting is required.
 
 #-------------------------------
 # 2. Running AlignmentProcessor
 #-------------------------------
 
-AlignmentProcessor is designed to convert the file into a useable format and 
+AlignmentProcessor is designed to convert the file into a usable format and 
 run the substitutions quickly, so everything can be run with one command. Each
 script can be run individually if necessary (each script's function and 
 options will be discussed later). The input order for AlignmentProcessor's 
@@ -151,6 +151,14 @@ command line does not matter, but it does matter for the individual scripts.
 To execute the AlignmentProcessor pipeline, you must first change into
 the package directory. Otherwise it will not be able to locate the scripts
 in the bin/ directory.
+
+If you are running CodeML and the program is interrupted, you may call the 
+07_CodeMLonDir.py script and it will continue where CodeML left off. This
+will save the time of having to run those genes through CodeML again (It will
+do the same thing if you call the entire pipeline again, but there is no need 
+to rerun the previous steps). It will not do the same for KaKs_Calculator 
+since KaKs_Calculator is much faster, so it should not be a problem to just
+invoke KaKs_Calculator on the whole directory again.
 
 # Example Usage: 
 
@@ -168,7 +176,7 @@ in the bin/ directory.
 
 	--ucsc	This will invoke 00_convertHeader.py, which will convert the 
 		headers from UCSC fasta files so they only contain build
-		names and gene IDs. This does not need to be run on Stich Gene
+		names and gene IDs. This does not need to be run on Stitch Gene
 		Blocks output.
 
 	--retainStops	This will tell AlignmentProcessor to retain sequences
@@ -177,7 +185,7 @@ in the bin/ directory.
 			from the analysis as they may bias the results.
 
 	--changeNames	Tells the program to change genome build names to 
-			commom names (more below).
+			common names (more below).
 
 	-%	a decimal value specifying the minimum percentage of reads 
 		that must remain after replacing unknown codons with gaps 
@@ -201,7 +209,7 @@ in the bin/ directory.
 			This file must be titled "codeml.ctl" (the default 
 			name given by PAML). 
 
-	-n	if "--codeml" is selected, you may specify the number of CPUs 
+	-t	if "--codeml" is selected, you may specify the number of CPUs 
 		to run CodeML. CodeML itself cannot be parallelized, but 
 		AlignmentProcessor can call multiple instances of CodeML to
 		shorten overall run time. (Default = 1)
@@ -210,7 +218,7 @@ in the bin/ directory.
 	
 	-h/--help	will print the program's help dialogue
 
-	-v/--version	will print the program version and copywright info
+	-v/--version	will print the program version and copyright info
 
 	--printNameList	will print the contents of 02_nameList.txt which 
 			contains the list of genome builds and associated 
@@ -237,16 +245,19 @@ in the bin/ directory.
 	Codeml requires that all of its parameters be specified in one control 
 	file (http://abacus.gene.ucl.ac.uk/software/pamlDOC.pdf). Provide a 
 	control file with your desired parameters and AlignmentProcessor will 
-	use it as template. It will only alter the input and output files so 
-	that they are unique for each file. You may also need to provide a 
-	tree file for codeml (see PAML manual above).
+	use it as template. AlignmentProcessor uses the Biopython codeml module 
+	to more easily edit the names of the input and output files. Because of
+	this, however, you must make sure that the first three lines (starting
+	with "seqfile", "treefile", or "outfile" have been removed from the 
+	control file. Otherwise, CodeML will presented only with the data 
+	contained in the control file, and not the whole directory of alingments.
 
 	The control file must be titled titled “codeml.ctl”, and it must be 
 	located in the output directory.
 
 # The CodeML tree file
 
-	If your CodeML analysis requires a phylogneic tree, provide your 
+	If your CodeML analysis requires a phylogenic tree, provide your 
 	desired tree, titled "codeml.tree" in the output directory. Specify
 	the tree as you want to appear to CodeML and be sure that the species
 	names are specified as the common names in the 02_nameList.txt file, 
@@ -261,13 +272,13 @@ in the bin/ directory.
 
 # Invoking the Ka/Ks pipeline with a UCSC alignment:
 
-	python AlignmentProcessor0.8.py --axt --kaks --ucsc -r green_anole \
+	python AlignmentProcessor0.11.py --axt --kaks --ucsc -r anoCar2 \
 	-i anolis_gallus.fa -o pairwiseKaKs/
 
 # Invoking the CodeML pipeline with a de novo alignment:
 
-	python AlignmentProcessor0.8.py --phylip --codeml -% 0.6 \
-	-r green_anole -i anolis_gallus.fa -o codemlOutput/
+	python AlignmentProcessor0.11.py --phylip --codeml -% 0.6 \
+	-r anoCar2 -i anolis_gallus.fa -o codemlOutput/
 
 #-------------------------------
 # 3. Individual Scripts
@@ -291,7 +302,7 @@ Remember that the order of the arguments does matter for these scripts.
 
 # 01_SplitFastaFiles.py
 
-	This script will split the input mult-fasta alignment into one file
+	This script will split the input multi-fasta alignment into one file
 	per gene. It will produce an output file for a gene if it has at least
 	two sequences. 
 
@@ -304,18 +315,18 @@ Remember that the order of the arguments does matter for these scripts.
 	aligned multiple FASTA files and replace FASTA headers with each 
 	species' common name.
 
-	python 02_RemoveHeaderOnDir.py 	<path to inut and output directories>
+	python 02_RemoveHeaderOnDir.py 	<path to input and output directories>
 
 # 03_CheckFrame.py
 
 	This script removes gaps introduced in the reference sequence by the
 	alignment and removes corresponding sites in other species. It assumes
-	that the reference sequnce was in frame before any gaps were inserted,
+	that the reference sequence was in frame before any gaps were inserted,
 	and it returns the reference sequence to its original open reading
 	frame. It will then replaces codons with missing nucleotides with gaps
 	to remove unknown amino acids from the sequence.
 
-	python 03_CheckFrameOnDir.py <path to inut and output directories> \
+	python 03_CheckFrameOnDir.py <path to input and output directories> \
 		<reference_species>
 
 # 04_CountBases.py
@@ -329,13 +340,13 @@ Remember that the order of the arguments does matter for these scripts.
 	it on its own.
 
 	python 05_CountBasesOnDir.py <threshold percentage as a decimal> \
-		<path to inut and output directories>
+		<path to input and output directories>
 
 # 05_ReplaceStopCodons.py
 
 	This program will remove the internal stop codons (TAA, TAG, TGA)
 	and replace with gaps (---) from the nucleotide alignment. Some 
-	programs will not run properly if they enounter a premature stop
+	programs will not run properly if they encounter a premature stop
 	codon.
 
 	Terminal stop codons will be replaced, while sequences with internal 
@@ -346,7 +357,7 @@ Remember that the order of the arguments does matter for these scripts.
 	written to file.
 
 	python 05_ReplaceStopCodonsOnDir.py \
-		<path to inut and output directories> --retainStops(optional)
+		<path to input and output directories> --retainStops(optional)
 
 # 06_FASTAtoAXT.py
 
@@ -355,9 +366,9 @@ Remember that the order of the arguments does matter for these scripts.
 	axt files.
 
 	Note: parseFastaIntoAXT.pl was provided by the developers of 
-	KaKs_Calculator and, as such, is the only perl script in this package.
+	KaKs_Calculator and, as such, is the only Perl script in this package.
 
-	python FASTAtoAXTonDirectory.py <path to inut and output directories>
+	python FASTAtoAXTonDirectory.py <path to input and output directories>
 
 # 06_FASTAtoPhylip.py
 
@@ -365,14 +376,14 @@ Remember that the order of the arguments does matter for these scripts.
  	from fasta format to a phylip format.
 
 	python 07_FASTAtoPhylip.py <number of species> \
-		<path to inut and output directories>
+		<path to input and output directories>
 
 # 07_KaKsonDir.py
 
 	This program executes KaKs_Calculator on every file in a directory. 
 
-	python 07_KaKsonDirectory.py <path to inut and output directories> \
-		<name of refernce species>
+	python 07_KaKsonDirectory.py <path to input and output directories> \
+		<name of reference species>
 
 # 07_CodeMLonDir.py
 
@@ -381,28 +392,30 @@ Remember that the order of the arguments does matter for these scripts.
 	codeml. It will overwrite the "seqfile", "treefile", "outfile" lines 
 	include the paths to the input phylip file, the output file, and the 
 	tree file. It will also call the ape R package to trim the tree file 
-	so that it only includes species which have not been filtered out.
+	so that it only includes species which have not been filtered out. If you
+	are running CodeML and the program is interrupted, you may invoke this 
+	script to pick up where you left off.
 
 	python 07_CodeMLonDir.py <path to codeml control file> \
-		<path to input and output directories> \
-		--retainStops(optional)
+		<path to input and output directories> 
 
-3 07_pruneTree.R
+# 07_pruneTree.py
 
-	This R script will call the ape package to dynamically trim input 
-	trees for CodeML if any sequences have been removed. Species 
-	whose sequences were removed in steps 4 or 5 will be removed from
+	This script will dynamically trim input trees for CodeML if any sequences
+	have been removed. Species whose sequences were removed in steps 4 or 5 
+	and are no longer in the phylip alignment will be removed from
 	the temporary tree given to CodeML.
 
-	(Caled by 07_CodeMLonDir.py)
+	python 07_pruneTree.py <path to input directory> \
+	<list of species remaining in alignment> <path to tmep output directory>
 
-# 08_compileKaKs_CSV.py
+# 08_compileKaKs.py
 
 	This script concatonates the output from KaKs_Calculator into a text
 	file. It adds a column for gene (or sequence) IDs, and prints the gene
 	ID from the filename.
 
-	python compileCSV.py <path to inut and output directories>
+	python compileCSV.py <path to input and output directories>
 
 #-------------------------------
 # 4. Outputs
@@ -424,7 +437,7 @@ after the stop codons have been removed. If you also specified --codeml,
 AlignmentProcessor will edit and submit the control file to CodeML and the 
 output files will be saved in 07_codeml. Since there are many different things 
 that can be done with the codeml output files, AlignmentProcessor does not 
-attmept to concatenate specific parts from the output files.
+attempt to concatenate specific parts from the output files.
 
 If you wish to convert convert the files to both formats, specify both --axt
 and --phylip the program will convert the fasta files to both formats. You may
@@ -438,7 +451,7 @@ memory.
 #-------------------------------
 
 # To test KaKs_Calculator:
-Change directory into the AlignmentProcessor folder. Paste the followig into
+Change directory into the AlignmentProcessor folder. Paste the following into
 a terminal:
 
 python AlignmentProcessor.py --axt --kaks --ucsc -r anoCar2 \
@@ -448,10 +461,10 @@ This will return a text file with 11 lines.
 
 # To test CodeML:
 The test directory already contains sample CodeML control and tree files, so
-all you need  to do is change into the AlignmentProcessor direcotry and paste
+all you need  to do is change into the AlignmentProcessor directory and paste
 the following:
 
-python AlignmentProcessor.py --phylip --codeml --ucsc -n 2 -r anoCar2 \
+python AlignmentProcessor.py --phylip --codeml --ucsc -t 2 -r anoCar2 \
 -i codemlTest.fa -o test/
 
 There should be 8 .mlc files in the 07_codeml directory.

@@ -14,6 +14,10 @@ import os
 def openFiles(percent, path):
     '''Opens all input files in the directory'''
     log = path + "Logs/04_CountBasesLog.txt"
+    # Create lsit of sequences excluded due to low nucleotide count
+    lowcount = path + "Logs/lowCount.txt"
+    with open(lowcount, "w") as countfile:
+        countfile.write("Gene\tSpecies with low nucleotide content\n")
     total = 0
     excluded = 0
     with open(log, "w") as runlog:
@@ -24,16 +28,17 @@ def openFiles(percent, path):
             proceed = False
             with open(file, "r") as infile:
                 filename = file.split("/")[-1]
+                geneid = filename.split(".")[0]
                 # Extract number of sequnces from file name
                 n = int(filename.split(".")[1])
                 # Create output file:
                 outfile = (path + "04_countBasesPercent/" +
-                           filename.split(".")[0] + "." + str(n) +
+                           geneid + "." + str(n) +
                            ".countBases")
                 proceed, seqs = seqDict(infile, n)
                 if proceed == True:
                     total += 1
-                    ex = countBases(n, seqs, percent, outfile)
+                    ex = countBases(n, seqs, percent, outfile, geneid, lowcount)
                     if ex == 1:
                         excluded += 1
                         runlog.write(filename.split(".")[0] + "\n")
@@ -59,7 +64,7 @@ def seqDict(infile, n):
     except ValueError:
         return False, seqs
 
-def countBases(n, seqs, percent, outfile):
+def countBases(n, seqs, percent, outfile, geneid, lowcount):
     '''Counts the number of nucleotides and only writes the sequence to an
 output file if they compose greater than the cutoff threshold of the sequence'''
     count = 0
@@ -80,6 +85,9 @@ output file if they compose greater than the cutoff threshold of the sequence'''
                     count += 1
                     output.write(">" + str(species) + "\n")
                     output.write(str(seqs[species]) + "\n")
+                else:
+                  with open(lowcount, "a") as countfile:
+                      countfile.write(geneid + "\t" + str(species) + "\n")
             except ZeroDivisionError:
                 pass
     # Delete output file if it does not have at least two sequences

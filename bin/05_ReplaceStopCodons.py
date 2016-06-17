@@ -22,9 +22,9 @@ def openFiles(path, retainStops):
         runlog.write("Genes excluded Due to Premature Stop Codons\n")
         total = 0
         excluded = 0
-        internalStops = path + "internalStops.txt"
+        internalStops = path + "Logs/internalStops.txt"
         with open(internalStops, "w") as stops:
-            stops.write("Gene\tSpecies\n")
+            stops.write("Gene\tSpecies with internal stop codons\n")
         inpath = path + "04_countBasesPercent/" + "*.countBases"
         files = glob(inpath)
         for file in files:
