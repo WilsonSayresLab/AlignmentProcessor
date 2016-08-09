@@ -48,14 +48,20 @@ is run for optional analysis program.'''
 			quit()
 	if codeml == True:
 		indir = os.path.isfile("paml/bin/codeml")
+		phyml = os.path.isfile("PhyML/PhyML")
 		if indir == False:
 			print("\n\tError: Please install PAML in the\
  AlignmentProcessor folder.\n")
+			quit()
+		if phyml == False:
+			print("\n\tError: Please install and rename PhyML for use\
+ with CodeML.\n")
 			quit()
 		if phylip == False:
 			print("\n\tError: Files must be converted into phylip format for use\
  with CodeML.\n")
 			quit()
+
 		
 def makeDir(path, outdir, axt, phylip):
 	'''Makes all sub-directories used by program.'''
@@ -79,6 +85,8 @@ def makeDir(path, outdir, axt, phylip):
 			except FileExistsError:
 				pass
 	os.chdir(path)
+
+#-----------------------------------------------------------------------------
 
 def convertHeaders(fasta):
 	'''Changes headers of UCSC CDS fasta files to includ eonly build name and
@@ -186,42 +194,45 @@ def phylipConvert(outdir, starttime, codeml):
 			print("Total runtime: ", datetime.now() - starttime)
 		return True
 
-def runcodeml(cpu, outdir, starttime):
+def runcodeml(cpu, outdir, forward, starttime):
 	'''Runs codeml on a directory.'''
 	print("Running codeml...")
 	cm = Popen(split("python bin/07_CodeMLonDir.py -i " + outdir
-					+ " -n " + cpu))
+					+ " -t " + cpu + " -f " + forward))
 	cm.wait()
 	if cm.returncode == 0:
 		print("Total runtime: ", datetime.now() - starttime)
 
+#-----------------------------------------------------------------------------
+
 def helplist():
 	print("\n### AlignmentProcessor will run the subsituion rate pipeline to \
 produce trimmed axt files for use with KaKs_calculator. ###\n")
-	print("	example usage: python AlignmentProcessor.py -% <decimal> \
+	print("\texample usage: python AlignmentProcessor.py -% <decimal> \
 --axt/phylip --kaks/codeml -i <input fasta file> -o \
 <path to output directory> -r <reference species>")
-	print("	--printNameList	prints list of genome build names and\
- associated common names")
-	print("	--addNameToList	add new genome build name and\
- associated common name to list")
-	print("	--axt	Converts files to axt for use in KaKs_Calcuator.")
-	print("	--phylip   Converts files to phylip for use in PhyML.")
-	print("	--kaks	 Runs KaKs_Calcuator if --axt is also specified")
-	print("	--codeml	 Runs codeml if --phylip is also specified")
-	print("	--ucsc	converts headers of CDS fasta files obtained from \
-the UCSC genome browser")
-	print("	--retainStops	retain sequences with internal stop codons")
-	print("	-r	the name of the reference species which will be used to \
-determine the open reading frame")
-	print("	-%	Sets the percentage cutoff for the countBases step (50% \
-by default).")
-	print("	-t	number of threads to use for CodeML.")
-	print("	-i	path to input file containing a multifasta alignment")
-	print("	-o	AlignmentProcessor will use this as its working \
+	print("\t-i	path to input file containing a multifasta alignment")
+	print("\t-o	AlignmentProcessor will use this as its working \
 directory and print output to this directory")
-	print("	-v	prints coyright and version information to the screen")
-	print("### Please note that you must be in the substituionManager \
+	print("\t-r	the name of the reference species which will be used to \
+determine the open reading frame")
+	print("\t--ucsc	converts headers of CDS fasta files obtained from \
+the UCSC genome browser")
+	print("\t--axt	Converts files to axt for use in KaKs_Calcuator.")
+	print("	\t--phylip   Converts files to phylip for use in PhyML.")
+	print("\t--kaks	 Runs KaKs_Calcuator if --axt is also specified")
+	print("\t--codeml	 Runs codeml if --phylip is also specified")
+	print("\t-t	number of threads to use for CodeML.")
+	print("\t-f specifies the forward branch of the CodeML input tree.")
+	print("\t--retainStops	retain sequences with internal stop codons")
+	print("\t-%	Sets the percentage cutoff for the countBases step (50% \
+by default).")
+	print("\t--printNameList	prints list of genome build names and\
+ associated common names")
+	print("\t--addNameToList	add new genome build name and\
+ associated common name to list")
+	print("\t-v	prints coyright and version information to the screen")
+	print("\n### Please note that you must be in the substituionManager \
 directory to run the program.###\n")
 
 def main():
@@ -238,13 +249,14 @@ def main():
 	cpu = "1"
 	percent = "0.5"
 	ref = "void"
+	forward = ""
 	# Extract values from command line:
 	for i in argv:
 		if i == "-h" or i == "--help":
 			helplist()
 			quit()
 		elif i == "-v" or i == "--version":
-			print("\nAlignmentProcessor0.11 Copyright 2016 by Shawn Rupp\n")
+			print("\nAlignmentProcessor0.20 Copyright 2016 by Shawn Rupp\n")
 			print("This program comes with ABSOLUTELY NO WARRANTY\n")
 			print("This is free software, and you are welcome to redistribute\
  it under certain conditions\n")
@@ -261,6 +273,10 @@ def main():
 				outdir = outdir + "/"
 		elif i == "-r":
 			ref = argv[argv.index(i) + 1]
+		elif i == "-t":
+			cpu = str(argv[argv.index(i) + 1])
+		elif i == "-f":
+			forward = argv[argv.index(i) + 1]
 		elif i == "-%":
 			percent = str(argv[argv.index(i) + 1])
 		elif i == "--axt":
@@ -273,8 +289,6 @@ def main():
 			codeml = True
 		elif i == "--ucsc":
 			conv = True
-		elif i == "-n":
-			cpu = str(argv[argv.index(i) + 1])
 		elif i == "--changeNames":
 			commonNames = True
 		elif i == "--retainStops":
@@ -332,7 +346,7 @@ def main():
 			# Run codeml
 			if codeml == True and kaks == False:
 				if pc == True:
-					runcodeml(cpu, outdir, starttime)
+					runcodeml(cpu, outdir, forward, starttime)
 
 if __name__ == "__main__":
 	main()

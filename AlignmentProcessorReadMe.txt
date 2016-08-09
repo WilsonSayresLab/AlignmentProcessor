@@ -12,14 +12,13 @@
 
 
 ###############################################################
-# AlignmentProcessor0.11 Package
+# AlignmentProcessor0.20 Package
 #
 #	Dependencies:	Python 3
 #			Python 3 version of Biopython
 #			Perl (if using KaKs_Calculator)
 #			PAML (if using CodeML)
-#			R (if using CodeML)
-#			ape R package (if using CodeML)
+#			PhyML (if using CodeML)
 ###############################################################
 
 ### Contents ###
@@ -37,10 +36,9 @@
 AlignmentProcessor is a pipeline meant to quickly convert a multi-fasta 
 alignment file into a format that can be read by KaKs_Calculator or PAML and 
 optionally run those programs. When running codeml, alignment processor will
-use input control and tree files as templates to create unique control and
-tree files for each gene. It will call the ape R package to dynamically trim
-the given phylogenic tree so that only species which remain in each gene's 
-alignment after trimming are represented in that gene's tree. 
+use an input control file as a template to create a unique control for each 
+gene. It will call PhyML to create a unique phylogenic tree for each gene 
+based off of its sequences. 
 
 You can run the AlignmentProcessor wrapper which will call all of the python 
 scripts in sequence, or you may call each script individually.
@@ -63,34 +61,27 @@ a terminal and Anaconda will install Biopython for you:
 
 # KaKs_Calculator
 
-AlignmentProcessor0.11 is packaged with KaKs_Calculator2.0 binaries for Linux
+AlignmentProcessor0.20 is packaged with KaKs_Calculator2.0 binaries for Linux
 and Windows, and a KaKs_Calculator1.2 binary for Mac (there is no 2.0 binary
 available for OSX). Before using, copy or move the appropriate binary for your
 system into the AlignmentProcessor bin which contains the python scripts.
 
-# PAML 4.8
+# PAML
 
 If you plan to use CodeML, you must first download PAML 
 (http://abacus.gene.ucl.ac.uk/software/paml.html) and move the folder into the
 AlignmentProcessor directory. Make sure that it is titled "paml".
 
-# Ape
-
-The most straightforward way to install ape, and most R packages, is through 
-Bioconductor. If you do not have Bioconductor installed, open R and paste:
-
-	source("https://bioconductor.org/biocLite.R")
-	biocLite()
-
-To install ape, enter:
-
-	library("BiocInstaller")
-	biocLite("ape")
-
+# PhyML
+If you plan to use CodeML, you must also download PhyML 
+(http://www.atgc-montpellier.fr/phyml/binaries.php). Similar to PAML, you must
+move the folder into the AlignmentProcessor directory and change the name of
+both the folder and the binary for your operating system to "PhyML".
 
 #-------------------------------
 # 1. Obtaining a fasta alignment
 #-------------------------------
+
 # UCSC Fasta Alignment
 It is possible to download CDS fasta alignments from the UCSC Table browser.
 This does, unfortunately, limit you to currently available alignments.
@@ -112,10 +103,16 @@ If you did not use a UCSC genome for the reference species in your alignment,
 you may need to upload the reference genome that you used as a custom build.
 Make sure that the genome, maf file, and BED file are all set to the custom
 build, and that the reference species build name is identical in all three 
-files. Additionally, you may not be able to use the UCSC BED12 file if you did
+files. 
+
+Additionally, you may not be able to use the UCSC BED12 file if you did
 not use a UCSC genome. If that is the case, you can either upload your own,
 or, if you used an Ensembl genome, you can just remove the "chr_UN" and "chr"
-chromosome prefixes from the file, and resubmit the file to Galaxy.
+chromosome prefixes from the file, and resubmit the file to Galaxy. For NCBI 
+genomes, you may download the gff from NCBI genome, use the UCSC utility 
+"gff3ToGenePred" with the -useName and -honorStartStopCodons options, and 
+use the UCSC utility "genePredToBed". This will return a BED12 file which 
+may be submitted to Galaxy.
 
 Upload your maf and BED files to Galaxy (usegalaxy.org) (or retrieve a BED 
 file of the genes for your reference species using the UCSC Main link under 
@@ -134,7 +131,7 @@ output file.
 
 This process will take a few hours, so plan accordingly.
 
-Since this method offer the most flexibility for working with alignments, 
+Since this method offers the most flexibility for working with alignments, 
 AlignmentProcessor was written with this output format in mind and no further
 formatting is required.
 
@@ -156,14 +153,15 @@ If you are running CodeML and the program is interrupted, you may call the
 07_CodeMLonDir.py script and it will continue where CodeML left off. This
 will save the time of having to run those genes through CodeML again (It will
 do the same thing if you call the entire pipeline again, but there is no need 
-to rerun the previous steps). It will not do the same for KaKs_Calculator 
+to re-run the previous steps). It will not do the same for KaKs_Calculator 
 since KaKs_Calculator is much faster, so it should not be a problem to just
 invoke KaKs_Calculator on the whole directory again.
 
 # Example Usage: 
 
 	python AlignmentProcessor.py --ucsc --axt/phylip --kaks/codeml \
-		--retainStops -% <decimal> -r <reference species> -i <input fasta file> \
+		--retainStops -% <decimal> -f <forward branch of codeml tree> \
+		-r <reference species> -i <input fasta file> \
 		-o <path to output directory> 
 
 # Required Arguments:
@@ -214,6 +212,11 @@ invoke KaKs_Calculator on the whole directory again.
 		AlignmentProcessor can call multiple instances of CodeML to
 		shorten overall run time. (Default = 1)
 
+	-f	the build or common name (if you use the --changeNames flag) of the 
+		species on the forward branch of the phylogneic tree supplied to 
+		CodeML. This species does not have to be the same as the reference 
+		species.
+
 # Additional Commands
 	
 	-h/--help	will print the program's help dialogue
@@ -245,39 +248,19 @@ invoke KaKs_Calculator on the whole directory again.
 	Codeml requires that all of its parameters be specified in one control 
 	file (http://abacus.gene.ucl.ac.uk/software/pamlDOC.pdf). Provide a 
 	control file with your desired parameters and AlignmentProcessor will 
-	use it as template. AlignmentProcessor uses the Biopython codeml module 
-	to more easily edit the names of the input and output files. Because of
-	this, however, you must make sure that the first three lines (starting
-	with "seqfile", "treefile", or "outfile" have been removed from the 
-	control file. Otherwise, CodeML will presented only with the data 
-	contained in the control file, and not the whole directory of alingments.
+	use it as template. 
 
 	The control file must be titled titled “codeml.ctl”, and it must be 
 	located in the output directory.
 
-# The CodeML tree file
-
-	If your CodeML analysis requires a phylogenic tree, provide your 
-	desired tree, titled "codeml.tree" in the output directory. Specify
-	the tree as you want to appear to CodeML and be sure that the species
-	names are specified as the common names in the 02_nameList.txt file, 
-	but trimmed to ten characters (some programs still set a ten character
-	limit on the length of names, so AlignmentProcessor trims the names). 
-	The 07_CodeMLonDir.py script will save any nodes you have specified 
-	with a "#" before sending a plain Newick tree to ape (which will not 
-	work if there are PAML node symbols). It will then add any nodes back 
-	into the tree after it has been trimmed. AlignmentProcessor will not 
-	currently save nodes specified with "$" since it is difficult to 
-	determine where a nested clade begins and ends.
-
 # Invoking the Ka/Ks pipeline with a UCSC alignment:
 
-	python AlignmentProcessor0.11.py --axt --kaks --ucsc -r anoCar2 \
+	python AlignmentProcessor0.20.py --axt --kaks --ucsc -r anoCar2 \
 	-i anolis_gallus.fa -o pairwiseKaKs/
 
 # Invoking the CodeML pipeline with a de novo alignment:
 
-	python AlignmentProcessor0.11.py --phylip --codeml -% 0.6 \
+	python AlignmentProcessor0.20.py --phylip --codeml -% 0.6 \
 	-r anoCar2 -i anolis_gallus.fa -o codemlOutput/
 
 #-------------------------------
@@ -388,26 +371,15 @@ Remember that the order of the arguments does matter for these scripts.
 # 07_CodeMLonDir.py
 
 	This script will run codeml on every file in a directory. It requires
-	the codeml.ctl file, and likely a tree file which it will supply to
-	codeml. It will overwrite the "seqfile", "treefile", "outfile" lines 
-	include the paths to the input phylip file, the output file, and the 
-	tree file. It will also call the ape R package to trim the tree file 
-	so that it only includes species which have not been filtered out. If you
-	are running CodeML and the program is interrupted, you may invoke this 
+	the codeml.ctl file. It will overwrite the "seqfile", "treefile", 
+	"outfile" lines include the paths to the input phylip file, the output
+	file, and the tree file. It will also PhyML to create the tree file. If 
+	you are running CodeML and the program is interrupted, you may invoke this 
 	script to pick up where you left off.
 
-	python 07_CodeMLonDir.py <path to codeml control file> \
-		<path to input and output directories> 
+	python 07_CodeMLonDir.py -t <# of threads> -f <name of forward branch> \
+	-i <path to input and output directories> 
 
-# 07_pruneTree.py
-
-	This script will dynamically trim input trees for CodeML if any sequences
-	have been removed. Species whose sequences were removed in steps 4 or 5 
-	and are no longer in the phylip alignment will be removed from
-	the temporary tree given to CodeML.
-
-	python 07_pruneTree.py <path to input directory> \
-	<list of species remaining in alignment> <path to tmep output directory>
 
 # 08_compileKaKs.py
 
@@ -441,7 +413,7 @@ attempt to concatenate specific parts from the output files.
 
 If you wish to convert convert the files to both formats, specify both --axt
 and --phylip the program will convert the fasta files to both formats. You may
-also run one of the individual scripts on the 07_rmStops directory to convert
+also run one of the individual scripts on the 05_rmStops directory to convert
 the files in a separate step. AlignmentProcessor will not, however, run 
 KaKs_Calculator and CodeML simultaneously, as this could require too much 
 memory.
@@ -460,11 +432,11 @@ python AlignmentProcessor.py --axt --kaks --ucsc -r anoCar2 \
 This will return a text file with 11 lines.
 
 # To test CodeML:
-The test directory already contains sample CodeML control and tree files, so
+The test directory already contains a sample CodeML control file, so
 all you need  to do is change into the AlignmentProcessor directory and paste
 the following:
 
 python AlignmentProcessor.py --phylip --codeml --ucsc -t 2 -r anoCar2 \
--i codemlTest.fa -o test/
+-f anoCar2 -i codemlTest.fa -o test/
 
 There should be 8 .mlc files in the 07_codeml directory.
