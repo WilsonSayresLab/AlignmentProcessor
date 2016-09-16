@@ -10,6 +10,8 @@ from shlex import split
 from glob import glob
 import os
 
+DEVNULL = open(os.devnull, "w")
+
 def calculateKaKs(path):
     '''Calculates substition rates.'''
     inpath = path + "06_axtFiles/" + "*.axt"
@@ -21,7 +23,7 @@ def calculateKaKs(path):
             outfile = (path + "07_KaKsOutput/" + filename.split(".")[0]
                        + ".kaks")
             ck = Popen(split("bin/KaKs_Calculator -i " + file + " -o " +
-                             outfile + " -m NG"))
+                             outfile + " -m NG"), stdout = DEVNULL)
             ck.wait()
 
 def main():

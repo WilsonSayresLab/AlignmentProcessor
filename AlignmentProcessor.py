@@ -118,8 +118,8 @@ def rmHeader(outdir, commonNames):
 	if commonNames == False:
 		rh = Popen(split("python bin/02_RemoveHeader.py " + outdir))
 	elif commonNames == True:
-		rh = Popen(split("python bin/02_RemoveHeader.py " + outdir +
-						 "--changeNames"))
+		rh = Popen(split("python bin/02_RemoveHeader.py " + outdir + 
+						" --changeNames"))
 	rh.wait()
 	if rh.returncode == 0:
 		return True
@@ -206,34 +206,34 @@ def runcodeml(cpu, outdir, forward, starttime):
 #-----------------------------------------------------------------------------
 
 def helplist():
-	print("\n### AlignmentProcessor will run the subsituion rate pipeline to \
-produce trimmed axt files for use with KaKs_calculator. ###\n")
+	print("\nAlignmentProcessor0.21 Copyright 2016 by Shawn Rupp\n")
 	print("\texample usage: python AlignmentProcessor.py -% <decimal> \
 --axt/phylip --kaks/codeml -i <input fasta file> -o \
-<path to output directory> -r <reference species>")
-	print("\t-i	path to input file containing a multifasta alignment")
-	print("\t-o	AlignmentProcessor will use this as its working \
+<path to output directory> -r <reference species>\n")
+	print("\t-i\tpath to input file containing a multifasta alignment")
+	print("\t-o\tAlignmentProcessor will use this as its working \
 directory and print output to this directory")
-	print("\t-r	the name of the reference species which will be used to \
+	print("\t-r\tthe name of the reference species which will be used to \
 determine the open reading frame")
-	print("\t--ucsc	converts headers of CDS fasta files obtained from \
+	print("\t--ucsc\tconverts headers of CDS fasta files obtained from \
 the UCSC genome browser")
-	print("\t--axt	Converts files to axt for use in KaKs_Calcuator.")
-	print("	\t--phylip   Converts files to phylip for use in PhyML.")
-	print("\t--kaks	 Runs KaKs_Calcuator if --axt is also specified")
-	print("\t--codeml	 Runs codeml if --phylip is also specified")
-	print("\t-t	number of threads to use for CodeML.")
-	print("\t-f specifies the forward branch of the CodeML input tree.")
-	print("\t--retainStops	retain sequences with internal stop codons")
-	print("\t-%	Sets the percentage cutoff for the countBases step (50% \
+	print("\t--axt\tConverts files to axt for use in KaKs_Calcuator.")
+	print("\t--phylip\tConverts files to phylip for use in PhyML.")
+	print("\t--kaks\tRuns KaKs_Calcuator if --axt is also specified")
+	print("\t--codeml\tRuns codeml if --phylip is also specified")
+	print("\t-t\tnumber of threads to use for CodeML.")
+	print("\t-f\tspecifies the forward branch of the CodeML input tree.")
+	print("\t-%\tSets the percentage cutoff for the countBases step (50% \
 by default).")
-	print("\t--printNameList	prints list of genome build names and\
+	print("\t--changeNames\tchange genome build names to common names.")
+	print("\t--retainStops\tretain sequences with internal stop codons")
+	print("\t--printNameList\tprints list of genome build names and\
  associated common names")
-	print("\t--addNameToList	add new genome build name and\
+	print("\t--addNameToList\tadd new genome build name and\
  associated common name to list")
-	print("\t-v	prints coyright and version information to the screen")
-	print("\n### Please note that you must be in the substituionManager \
-directory to run the program.###\n")
+	print("\t-v\tprints coyright and version information to the screen")
+	print("\n### Please note that you must be in the AlignmentProcessor \
+directory to run the program. ###\n")
 
 def main():
 	starttime = datetime.now()
@@ -250,13 +250,18 @@ def main():
 	percent = "0.5"
 	ref = "void"
 	forward = ""
-	# Extract values from command line:
+
 	for i in argv:
-		if i == "-h" or i == "--help":
+		# Print help list
+		if len(argv) == 1:
 			helplist()
 			quit()
+		elif i == "-h" or i == "--help":
+			helplist()
+			quit()
+		# Other functions
 		elif i == "-v" or i == "--version":
-			print("\nAlignmentProcessor0.20 Copyright 2016 by Shawn Rupp\n")
+			print("\nAlignmentProcessor0.21 Copyright 2016 by Shawn Rupp\n")
 			print("This program comes with ABSOLUTELY NO WARRANTY\n")
 			print("This is free software, and you are welcome to redistribute\
  it under certain conditions\n")
@@ -265,6 +270,7 @@ def main():
 			readList("read", "void", "void")
 		elif i == "--addNameToList":
 			readList("add", argv[argv.index(i) + 1], argv[argv.index(i) + 2])
+		# Extract values from command line:
 		elif i == "-i":
 			fasta = argv[argv.index(i) + 1]
 		elif i == "-o":
