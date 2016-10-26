@@ -11,7 +11,7 @@
     GNU General Public License for more details.
 
 
-###############################################################
+##############################################################################
 # AlignmentProcessor0.21 Package
 
 #	Dependencies:	
@@ -19,7 +19,7 @@
 			Python 3 version of Biopython
 			PAML (if using CodeML)
 			PhyML (if using CodeML)
-###############################################################
+##############################################################################
 
 
 ### Contents ###
@@ -155,9 +155,9 @@ invoke KaKs_Calculator on the whole directory again.
 
 # Example Usage: 
 
-	python AlignmentProcessor.py --ucsc --axt/phylip --kaks/codeml \
-		--retainStops -% <decimal> -f <forward branch of codeml tree> \
-		-r <reference species> -i <input fasta file> \
+	python AlignmentProcessor.py --ucsc --axt/phylip --kaks/codeml 
+		--retainStops -% <decimal> -f <forward branch of codeml tree> 
+		-r <reference species> -i <input fasta file> 
 		-o <path to output directory> 
 
 # Required Arguments:
@@ -195,6 +195,9 @@ invoke KaKs_Calculator on the whole directory again.
 			otherwise it will not run). Otherwise the program will quit 
 			after converting the files.
 
+	-m	indicates the method for KaKs_Calculator to use to calculate 
+		substitution rates (see below).
+
 	--codeml	will run codeml on all of the files in the 
 				06_phylipFiles directory. You must also supply a 
 				control file for CodeML which must be located in the 
@@ -207,10 +210,16 @@ invoke KaKs_Calculator on the whole directory again.
 		AlignmentProcessor can call multiple instances of CodeML to
 		shorten overall run time. (Default = 1)
 
-	-f	the build name (or common name if you use the --changeNames flag) of 
-		the	species on the forward branch of the phylogneic tree supplied by 
-		PhyML. This species does not have to be the same as the reference 
-		species.
+	-f	the first ten characters (standard phylip format truncates the species
+		names to ten characters) of the build name (or common name if you use 
+		the --changeNames flag) of the species on the forward branch of the 
+		phylogneic tree supplied by PhyML. This species does not have to be 
+		the same as the reference species.
+
+	--noCleanUp		tells the program to keep temporary CodeML control files,
+					tree files, and other PhyML and CodeML output/temporary 
+					files which will be located in the tmp directory. 
+					These files are removed by default.
 
 # Additional Commands
 	
@@ -223,7 +232,7 @@ invoke KaKs_Calculator on the whole directory again.
 			common names. Must be run without any other arguments
 
 	--addNameToList will add an entry to the 02_nameList.txt file.
-			e.g. python AlignmentProcessor.py -- addNameToList \
+			e.g. python AlignmentProcessor.py -- addNameToList 
 				<build> <common name>
 				
 
@@ -238,6 +247,27 @@ invoke KaKs_Calculator on the whole directory again.
 	new row, followed by a tab, then the desired common name. Make sure 
 	there are no spaces in either name.
 
+# KaKs_Calculator Method
+
+	KaKs_Calculator can calculate substitution rates in a number of different
+	ways which can be specified to AlignmentProcessor using the "-m" flag. 
+	These methods include estimations, that are generally much faster, and 
+	maximum liklihood models, that should be more accurate. See the 
+	KaKs_Calculator documentation in the KaKs_Calculotor folder for more 
+	information.
+
+	Estimations:
+	NG (default in AlignmentProcessor)
+	LWL
+	LPB
+	MLWL
+	YN
+	MYN
+	
+	Maximum Liklihood:
+	GY
+	MS (recommended fof maximum liklihood)
+
 # The CodeML control file
 
 	Codeml requires that all of its parameters be specified in one control 
@@ -245,18 +275,21 @@ invoke KaKs_Calculator on the whole directory again.
 	control file with your desired parameters and AlignmentProcessor will 
 	use it as template. 
 
-	The control file must be titled titled “codeml.ctl”, and it must be 
-	located in the output directory. Examples are included with PAML and one
-	is included in AlignmentProcessor's test directory.
+	The control file must have a “.ctl” extension, and it must be 
+	located in the output directory. Only provide one control file in this 
+	directory. Examples are included with PAML and the controlFiles directory
+	contains example control files for branch site, branch specific, and 
+	pairwise analyses. These can simply be copied into your output directory 
+	or you may supply one of your own.
 
 # Invoking the Ka/Ks pipeline with a UCSC alignment:
 
-	python AlignmentProcessor0.21.py --axt --kaks --ucsc -r anoCar2 \
+	python AlignmentProcessor0.21.py --axt --kaks --ucsc -r anoCar2
 	-i anolis_gallus.fa -o pairwiseKaKs/
 
 # Invoking the CodeML pipeline with a de novo alignment:
 
-	python AlignmentProcessor0.21.py --phylip --codeml -% 0.6 \
+	python AlignmentProcessor0.21.py --phylip --codeml -% 0.6
 	-r anoCar2 -i anolis_gallus.fa -o codemlOutput/
 
 -------------------------------
@@ -285,7 +318,7 @@ Remember that the order of the arguments does matter for these scripts.
 	per gene. It will produce an output file for a gene if it has at least
 	two sequences. 
 
-	python 01_splitFastaFiles.py <input fasta alignment> \
+	python 01_splitFastaFiles.py <input fasta alignment>
 		<path to output directory>
 
 02_RemoveHeader.py
@@ -294,7 +327,7 @@ Remember that the order of the arguments does matter for these scripts.
 	FASTA files and remove gene IDs from the fasta headers.	It will replace 
 	build names with each species' common name if "--changeNames" is specified.
 
-	python 02_RemoveHeaderOnDir.py <path to input and output directories> \
+	python 02_RemoveHeaderOnDir.py <path to input and output directories>
 		--changeNames(optional)
 
 03_CheckFrame.py
@@ -306,7 +339,7 @@ Remember that the order of the arguments does matter for these scripts.
 	frame. It will then replace codons with missing nucleotides with gaps
 	to remove unknown amino acids from the sequence.
 
-	python 03_CheckFrameOnDir.py <path to input and output directories> \
+	python 03_CheckFrameOnDir.py <path to input and output directories>
 		<reference_species>
 
 04_CountBases.py
@@ -319,7 +352,7 @@ Remember that the order of the arguments does matter for these scripts.
 	but the script itself does not, so you MUST specify one if you invoke 
 	it on its own.
 
-	python 05_CountBasesOnDir.py <threshold percentage as a decimal> \
+	python 05_CountBasesOnDir.py <threshold percentage as a decimal>
 		<path to input and output directories>
 
 05_ReplaceStopCodons.py
@@ -335,7 +368,7 @@ Remember that the order of the arguments does matter for these scripts.
 	any gene which does not have at least two remaining sequences will not be
 	written to file.
 
-	python 05_ReplaceStopCodonsOnDir.py \
+	python 05_ReplaceStopCodonsOnDir.py 
 		<path to input and output directories> --retainStops(optional)
 
 06_FASTAtoAXT.py
@@ -349,15 +382,15 @@ Remember that the order of the arguments does matter for these scripts.
 	This program will convert all files in an input directory
  	from fasta format to a phylip format.
 
-	python 07_FASTAtoPhylip.py <number of species> \
+	python 07_FASTAtoPhylip.py <number of species> 
 		<path to input and output directories>
 
 07_KaKsonDir.py
 
 	This program executes KaKs_Calculator on every file in a directory. 
 
-	python 07_KaKsonDirectory.py <path to input and output directories> \
-		<name of reference species>
+	python 07_KaKsonDirectory.py <path to input and output directories>
+		<method>
 
 07_CodeMLonDir.py
 
@@ -371,7 +404,7 @@ Remember that the order of the arguments does matter for these scripts.
 	Note: Since this script has greater utility as a stand-alone program, it 
 	utilizes flags so that the order of the arguments does not matter. 
 
-	python 07_CodeMLonDir.py -t <# of threads> -f <name of forward branch> \
+	python 07_CodeMLonDir.py -t <# of threads> -f <name of forward branch>
 		-i <path to input and output directories> 
 
 
@@ -421,7 +454,7 @@ memory.
 Change directory into the AlignmentProcessor folder. Paste the following into
 a terminal:
 
-python AlignmentProcessor.py --ucsc --axt --kaks -r anoCar2 \
+python AlignmentProcessor.py --ucsc --axt --kaks -r anoCar2
 -i test/kaksTest.fa -o test/
 
 This will return a tsv file with 11 lines.
@@ -431,7 +464,7 @@ The test directory already contains a sample CodeML control file, so
 all you need  to do is change into the AlignmentProcessor directory and paste
 the following:
 
-python AlignmentProcessor.py --ucsc --phylip --codeml -t 2 -r anoCar2 \
+python AlignmentProcessor.py --ucsc --phylip --codeml -t 2 -r anoCar2
 -f anoCar2 -i test/codemlTest.fa -o test/
 
 There should be 8 .mlc files in the 07_codeml directory.

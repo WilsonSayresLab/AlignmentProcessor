@@ -1,0 +1,195 @@
+'''This program will run CodeML on a directory of single gene alignments.
+It will generate a unique control file and tree file for each input gene
+before invoking CodeML using the number of CPUs specified by the user
+(default =1).
+
+	Copyright 2016 by Shawn Rupp'''
+
+from datetime import datetime
+from sys import argv, stdout
+from glob import glob
+from subprocess import Popen
+from shlex import split
+from functools import partial
+from multiprocessing import cpu_count
+from multiprocessing.dummy import Pool
+import time
+import shutil
+import os
+import re
+
+# Define max number of threads and devnull for capturing stdout
+MAXCPU = cpu_count()
+DEVNULL = open(os.devnull, "w")
+
+def controlFiles(path):
+	'''Reads input files and stores them in memory'''
+	usetree = False
+	# Make temp directory
+	try:
+		os.mkdir(path + "tmp/")
+	except FileExistsError:
+		pass
+	with open(path + "codeml.ctl", "r") as control:
+		ctl = control.readlines()
+	for line in ctl:
+		# Determine if a phylogenic tree is needed
+		if "runmode = 0" in line or "runmode = 1" in line:
+			usetree = True
+	return usetree, ctl
+
+def outputFiles(path):
+	'''Identifies genes which have already been run through CodeML.'''
+	finished = path + "Logs/finishedCodeML.txt"
+	if os.path.isfile(finished) == False:
+		with open(finished, "w") as fin:
+			# Create log file and empty list
+			completed = []
+	elif os.path.isfile(finished) == True:
+		# Create list of completed files
+		with open(finished, "r") as fin:
+			completed = fin.readlines()
+	return completed
+
+#-----------------------------------------------------------------------------
+
+def runCodeml(ap, usetree, path, completed, ctl, forward, gene):
+	'''Creates temporary control and tree files and runs CodeML.'''
+	try:
+		go = True
+		filename = gene.split("/")[-1]
+		geneid = filename.split(".")[0]
+		if (geneid + "\n") in completed:
+			pass
+		else:
+			# Create unique working directory (allows CodeML to create
+			# multiple temp files with the same name).
+			wd = path + "tmp/" + geneid + "/"
+			try:
+				os.mkdir(wd)
+			except FileExistsError:
+				pass
+			# Set unique file names
+			outfile = (path + "07_codeml/" + geneid + "." +
+						filename.split(".")[1] + ".mlc")
+			tempctl = wd + geneid + ".ctl"
+			treefile = wd + geneid + ".tree"
+			# Make gene-spefic control file
+			makeCtl(gene, outfile, tempctl, treefile, ctl)
+			if usetree == True:
+				go = False
+				# Make tree only if it will be used
+				go = makeTree(path, geneid, treefile, forward)
+			if go == True:
+			# Calls CodeML
+				print(go)
+				os.chdir(wd)
+				cm = Popen(split
+					(ap + "/paml/bin/codeml " + tempctl), stdout = DEVNULL)
+				cm.wait()
+				'''# Delete temp files and add to count when finished
+				shutil.rmtree(wd)
+				# Append gene ID to list of finishedCodeML.txt
+				with open(path + "Logs/finishedCodeML.txt", "a") as finished:
+					finished.write(geneid + "\n")'''
+	except TypeError:
+		# Skip entires with NoneType
+		pass
+
+def makeCtl(gene, outfile, tempctl, treefile, ctl):
+	'''Creates unique control file'''
+	with open(tempctl, "w") as temp:
+		for line in ctl:
+			if "seqfile" in line:
+				temp.write("\tseqfile = " + gene + "\n")
+			elif "outfile" in line:
+				temp.write("\toutfile = " + outfile + "\n")
+			elif "treefile" in line:
+				temp.write("\ttreefile = " + treefile + "\n")
+			else:
+				temp.write(line)
+
+def makeTree(path, geneid, treefile, forward):
+	'''Calls PhyML to create a gene tree.'''
+	# Use fasta file for FastTree
+	print(geneid)
+	fasta = str(glob(path + "05_ReplaceStopCodons/" + geneid + "*")[0])
+	com = "./bin/FastTree -quiet -gtr -nt < " + fasta + " > " + treefile
+	#ft = Popen(com, stdout = DEVNULL)
+	ft = os.system(com)
+	os.wait(ft)
+	# Read tree
+	print(fasta)
+	with open(treefile, "r") as genetree:
+		tree = genetree.readlines()[0]
+	# Remove branch lables introduced by FastTree
+	tree = re.sub(r"(\d\.\d+):\d", "", tree)
+	print(tree)
+	# Adds node for forward species if specified
+	if forward in tree:
+		# Determine location and length of species name
+		i = tree.index(forward) + len(forward)
+		if ":" in tree:
+			# Find end of branch length (find next end-of-secies char)
+			comma = tree.find(",", i)
+			paren = tree.find(")", i)
+			i = min([comma, paren])
+		print(i)
+		# Insert space and  node symbol after species name
+		tree = (tree[:i] + " #1" + tree[i:])
+	with open(treefile, "w") as outtree:
+		# Overwrite treefile
+		string = ""
+		for i in tree:
+			string += i
+		outtree.write(string)			
+	return True
+
+#-----------------------------------------------------------------------------
+
+def main():
+	if argv[1] == "-h" or argv[1] == "--help":
+		print("Usage: python 07_CodeMLonDir.py -i \
+<path to CodeML control file> -t <# of CPUs> -f forward species node")
+		quit()
+	else:
+		starttime = datetime.now()
+		# Save path to the AlignmentProcessor directory
+		ap = os.getcwd() + "/"
+		cpu = 1
+		retainStops = False
+		forward = ""
+		# Parse command
+		for i in argv:
+			if i == "-i":
+				path = argv[argv.index(i) + 1]
+			elif i == "-t":
+				cpu = int(argv[argv.index(i) + 1])
+			elif i == "-f":
+				forward = argv[argv.index(i) + 1]
+		# Set directory names and add a trailing "/" if necessary
+		if path[-1] != "/":
+			path += "/"
+		# Make sure too many threads have not been specified
+		if cpu > MAXCPU:
+			cpu = MAXCPU
+		# Reads in required data
+		usetree, ctl = controlFiles(path)
+		completed = outputFiles(path)
+		# Call CodeML for all files in a directory.
+		genes = glob(path + "06_phylipFiles/" + "*.phylip")
+		pool = Pool(processes = cpu)
+		func = partial(runCodeml, ap, usetree, path, completed, ctl, forward)
+		print("\n\tRunning CodeML with", str(cpu), "threads....\n")
+		try:
+			pool.map(func, genes)
+		except FileNotFoundError:
+			pass		
+		pool.close()
+		pool.join()
+		# Remove tmp directory
+		#os.rmdir(path + "tmp/")
+		print("\n\tCodeML runtime: ", datetime.now() - starttime, "\n")
+
+if __name__ == "__main__":
+	main()

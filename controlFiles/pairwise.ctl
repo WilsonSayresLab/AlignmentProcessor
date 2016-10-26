@@ -1,10 +1,10 @@
-	  seqfile = sample.txt * sequence data filename
-     treefile = samplephy.phy     * tree structure file name
-      outfile = mlc           * main result file name
+      seqfile = 
+     treefile =  
+      outfile = 
 	
-	   noisy = 0  * 0,1,2,3,9: how much rubbish on the screen
+	    noisy = 0  * 0,1,2,3,9: how much rubbish on the screen
       verbose = 0  * 0: concise; 1: detailed, 2: too much
-      runmode = 0  * 0: user tree;  1: semi-automatic;  2: automatic
+      runmode = -2  * 0: user tree;  1: semi-automatic;  2: automatic
                    * 3: StepwiseAddition; (4,5):PerturbationNNI; -2: pairwise
 
       seqtype = 1  * 1:codons; 2:AAs; 3:codons-->AAs
@@ -13,8 +13,7 @@
        aaDist = 0  * 0:equal, +:geometric; -:linear, 1-6:G1974,Miyata,c,p,v,a
    aaRatefile = dat/jones.dat  * only used for aa seqs with model=empirical(_F)
                    * dayhoff.dat, jones.dat, wag.dat, mtmam.dat, or your own
-        model = 1
-                   * models for codons:
+        model = 0  * models for codons:
                        * 0:one, 1:b, 2:2 or more dN/dS ratios for branches
 
       NSsites = 0  * 0:one w;1:neutral;2:selection; 3:discrete;4:freqs;
@@ -29,7 +28,7 @@
         omega = 1 * initial or fixed omega, for codons or codon-based AAs
 
     fix_alpha = 1  * 0: estimate gamma shape parameter; 1: fix it at alpha
-        alpha = 0. * initial or fixed alpha, 0:infinity (constant rate)
+        alpha = 0 * initial or fixed alpha, 0:infinity (constant rate)
        Malpha = 0  * different alphas for genes
         ncatG = 8  * # of categories in dG of NSsites models
 

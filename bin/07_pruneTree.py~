@@ -1,0 +1,237 @@
+'''This script will prune phylogenic trees for use in PAML. It will not alter 
+branch length or node notation. Output is saved to temp directory.'''
+
+from sys import argv
+from collections import OrderedDict
+
+def readTree(treefile):
+	# Reads in one string per tree file
+	with open(treefile, "r") as inpt:
+		intree = inpt.readlines()[0].rstrip()
+	if "$" in intree:
+		# Makes sure there are no multi-node symbols ($)
+		print("\n\tPlease only use dollar signs (#) for forward branches.\n")
+		quit()
+	# Determine if branch lengths are present
+	if ":" in intree:
+		branches = True
+	return intree.split(","), branches
+
+def parse(intree):
+	#Constructs tree object
+	treedict = OrderedDict()
+	for i, item in enumerate(intree):
+		usenode = False
+		# Isolate species name 
+		splt = item.strip().split()
+		try:
+			# Save node symbol if it is present
+			node = splt[1]
+			usenode = True
+		except IndexError:
+			pass
+		j = splt[0].split(":")
+		# Obtain species name without any punctuation
+		species = j[0].replace("(", "")
+		species = species.replace(")", "")
+		species = species.replace(";", "")
+		# Add items to dict with species name as key
+		treedict[species] = [i, usenode, j[0]]
+		if usenode == True:
+			# Add node
+			treedict[species].append(node)
+		if len(j) > 1:
+			# Add lengths
+			for i in j[1:]:
+				treedict[species].append(i)
+	return treedict
+
+def prune(treedict, exclude, branches):
+	# Assembles new tree without species in exclude
+	# Modification keys which will relate one species to the next
+	modnext = False
+	l = len(treedict)-1
+	tree = ""
+	for species in treedict:
+		if species not in exclude:
+		# Write out all info for species that are retained
+			if modnext == True:
+				newtree = modifyNext(treedict[species])
+				modnext = False
+			else:
+				newtree = noMod(treedict[species])
+			if treedict[species][0] < l:
+				# Add comma if this is not the last entry
+				newtree += ","
+			tree += newtree	
+		elif species in exclude:
+			# Write out non-species-specific data
+			# Save index of removed species
+			oparen = treedict[species][2].count("(") - 1
+			if oparen >= 0:
+				# Add open parentheses for branches
+				tree += "(" * oparen
+				modnext = True
+			else:
+				r = tree.rfind("(")
+				for i in treedict:
+					# Identify previous species in tree
+					if treedict[i][0] == treedict[species][0] - 1:
+						prevspec = treedict[i]
+				if branches == True:
+					# Remove previous species to modify branch lengths
+					tree = tree[:r]
+					newtree = modifyPrevious(treedict[species], prevspec)
+					if treedict[species][0] < l:
+						# Add comma if this is not the last entry
+						newtree += ","
+					tree += newtree	
+				elif branches == False:	
+					# Remove last open parentheses and trailing comma
+					tree = tree[:r] + tree[r+1:].replace(",", "")
+					if treedict[species][1] == True:
+						cparen = treedict[species][3].count(")") - 1
+						if cparen >= 1:
+							# Add close parentheses for branches
+							tree += ")" * cparen
+						else:
+							pass
+					elif treedict[species][1] == False:
+						cparen = treedict[species][2].count(")") - 1
+						if cparen >= 1:
+							# Add close parentheses for branches
+							tree += ")" * cparen
+						else:
+							pass	
+	if tree[-1] != ";":
+		# Add semicolon to end of tree
+		tree += ";"
+	return tree
+
+#-----------------------------------------------------------------------------
+'''Branch length modification functions.'''
+
+def noMod(species):
+	# Create string for unchanged species
+	l = len(species)
+	newtree = species[2]
+	if species[1] == True:
+		# Write species length and node
+		if l >= 5:
+			newtree += ":" + species[4]
+			newtree += " " + species[3]
+			if l > 5:
+				# Write any remaining branch lengths
+				for i in species[5:]:
+					newtree += ":" + i
+		elif l == 4:
+			# Write node
+			newtree += " " + species[3]
+	elif species[1] == False:
+		if l >= 4:
+			for i in species[3:]:
+				# Add lengths to tree
+				newtree += ":" + i
+		elif l < 4:
+			pass
+	return newtree
+
+def modifyNext(species):
+	# Create string when first species in a pair is removed
+	l = len(species)
+	newtree = species[2]
+	if species[1] == True:
+		# If species has a node
+		if l >= 6:
+			# Add branch lengths if there are more than one
+			newlength = addLengths(species[4], species[5])
+			species[4] = (newlength + ")")
+			species.remove(species[5])
+			# Write species length and node
+			newtree += ":" + species[4]
+			newtree += " " + species[3] + ")"
+			if l > 6:
+				# Write any remaining branch lengths
+				for i in species[5:]:
+					newtree += ":" + i
+		elif l == 5:
+			# Write species length and node
+			newtree += ":" + species[4]
+			newtree += " " + species[3]
+		elif l == 4:
+			# Write node
+			newtree += " " + species[3]
+		else:
+			pass
+	elif species[1] == False:
+		# If species does not have a node
+		if l >= 5:
+			# Add branch lengths if there are more than one
+			newlength = addLengths(species[3], species[4])
+			species[3] = (newlength + ")")
+			species.remove(species[4])
+			for i in species[3:]:
+				# Add lengths to tree
+				newtree += ":" + i
+		elif l == 4:
+			# Add node
+			newtree += ":" + species[3]
+		else:
+			pass
+	return newtree
+
+def modifyPrevious(species, prevspec):
+	# Add branch lengths and send new list to noMod function
+	# Extract clade branch lengths from excluded species
+	if species[1] == True:
+		newlen = species[5:]
+	elif species[1] == False:
+		newlen = species[4:]
+	# Add clade branch species length
+	if prevspec[1] == True:
+		newlength = addLengths(prevspec[4], newlen[0])
+		prevspec[4] = (newlength + ")")
+	elif prevspec[1] == False:
+		newlength = addLengths(prevspec[3], newlen[0])
+		prevspec[3] = (newlength + ")")
+	# Remove one open parentheses to account for dropped species
+	prevspec[2] = prevspec[2][1:]
+	# Add remaining lengths to prevspec list
+	for i in newlen[1:]:
+		prevspec.append(i)
+	# Call noMod function
+	newtree = noMod(prevspec)
+	return newtree
+
+#-----------------------------------------------------------------------------
+
+def addLengths(species, clade):
+	# Combine species and clade branch lengths
+	species = float(species.replace(")", ""))
+	clade = float(clade.replace(")", ""))
+	return str(species + clade)
+
+def writeTree(outtree, outfile):
+	# Writes tree to file
+	with open(outfile, "w") as output:
+		output.write(outtree)
+
+def main():
+	if argv[1] == "-h" or argv[1] == "--help":
+		print("usage: python 07_pruneTree.py <path to input tree> \
+<path to temp output file> <list of species remaining in alignment>")
+	else:
+		branches = False
+		treefile = argv[1]
+		outfile = argv[2]
+		splist = argv[3]
+		# Split string into list of species
+		exclude = splist.split("-")
+		# Call functions to parse, prune, and print tree
+		intree, branches = readTree(treefile)
+		treedict = parse(intree)
+		outtree = prune(treedict, exclude, branches)
+		writeTree(outtree, outfile)
+
+if __name__ == "__main__":
+	main()

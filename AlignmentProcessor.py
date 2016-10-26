@@ -33,7 +33,7 @@ new entries to be added.'''
 			names.write(build + "\t" + common + "\n")
 			quit()
 
-def checkInput(axt, kaks, phylip, codeml):
+def checkInput(axt, kaks, phylip, codeml, outdir):
 	'''Makes sure necessary programs are installed and proper file conversion
 is run for optional analysis program.'''
 	if kaks == True:
@@ -60,6 +60,11 @@ is run for optional analysis program.'''
 		if phylip == False:
 			print("\n\tError: Files must be converted into phylip format for use\
  with CodeML.\n")
+		control = glob(outdir + "*.ctl")
+		if len(control) == 0:
+			print("\n\tPlease supply a control file for CodeML.\n")
+		elif len(control) > 1:
+			print("\n\tPlease supply only one CodeML control file.\n")
 			quit()
 
 		
@@ -169,10 +174,10 @@ def axtConvert(outdir, kaks, starttime):
 			print("Finished converting files.")
 			print("Total runtime: ", datetime.now() - starttime)
 
-def calculateKaKs(outdir):
+def calculateKaKs(outdir, method):
 	'''Calculates substition rates.'''
 	print("Calculating Ka/Ks values...")
-	ck = Popen(split("python bin/07_KaKsonDir.py " + outdir))
+	ck = Popen(split("python bin/07_KaKsonDir.py " + outdir + " " + method))
 	ck.wait()
 	if ck.returncode == 0:
 		return True
@@ -194,11 +199,16 @@ def phylipConvert(outdir, starttime, codeml):
 			print("Total runtime: ", datetime.now() - starttime)
 		return True
 
-def runcodeml(cpu, outdir, forward, starttime):
+def runcodeml(cpu, outdir, forward, cleanup, starttime):
 	'''Runs codeml on a directory.'''
 	print("Running codeml...")
-	cm = Popen(split("python bin/07_CodeMLonDir.py -i " + outdir
-					+ " -t " + cpu + " -f " + forward))
+	# Build commands and add options if necessary
+	string = "python bin/07_CodeMLonDir.py -t " + cpu + " -i " + outdir
+	if cleanup == False:
+		string += " --noCleanUp"
+	if forward:
+		string += " -f " + forward
+	cm = Popen(split(string))
 	cm.wait()
 	if cm.returncode == 0:
 		print("Total runtime: ", datetime.now() - starttime)
@@ -206,7 +216,7 @@ def runcodeml(cpu, outdir, forward, starttime):
 #-----------------------------------------------------------------------------
 
 def helplist():
-	print("\nAlignmentProcessor0.21 Copyright 2016 by Shawn Rupp\n")
+	print("\nAlignmentProcessor1.0 Copyright 2016 by Shawn Rupp\n")
 	print("\texample usage: python AlignmentProcessor.py -% <decimal> \
 --axt/phylip --kaks/codeml -i <input fasta file> -o \
 <path to output directory> -r <reference species>\n")
@@ -217,9 +227,11 @@ directory and print output to this directory")
 determine the open reading frame")
 	print("\t--ucsc\tconverts headers of CDS fasta files obtained from \
 the UCSC genome browser")
-	print("\t--axt\tConverts files to axt for use in KaKs_Calcuator.")
-	print("\t--phylip\tConverts files to phylip for use in PhyML.")
-	print("\t--kaks\tRuns KaKs_Calcuator if --axt is also specified")
+	print("\t--axt\tconverts files to axt for use in KaKs_Calcuator.")
+	print("\t--phylip\tconverts files to phylip for use in PhyML.")
+	print("\t--kaks\truns KaKs_Calcuator if --axt is also specified")
+	print("\t-m\tsets the method to calculate substitution rates in \
+KaKs_Calculator (NG by default).")
 	print("\t--codeml\tRuns codeml if --phylip is also specified")
 	print("\t-t\tnumber of threads to use for CodeML.")
 	print("\t-f\tspecifies the forward branch of the CodeML input tree.")
@@ -227,6 +239,8 @@ the UCSC genome browser")
 by default).")
 	print("\t--changeNames\tchange genome build names to common names.")
 	print("\t--retainStops\tretain sequences with internal stop codons")
+	print("\t--noCleanUp\ttells the program to keep temporary control files, \
+tree files, etc. (These files are removed by default)")
 	print("\t--printNameList\tprints list of genome build names and\
  associated common names")
 	print("\t--addNameToList\tadd new genome build name and\
@@ -237,9 +251,10 @@ directory to run the program. ###\n")
 
 def main():
 	starttime = datetime.now()
-	# Set optional parameters to False:
+	# Set optional parameters:
 	commonNames = False
 	retainStops = False
+	cleanup = True
 	axt = False
 	phylip = False
 	kaks = False
@@ -250,7 +265,7 @@ def main():
 	percent = "0.5"
 	ref = "void"
 	forward = ""
-
+	method = "NG"
 	for i in argv:
 		# Print help list
 		if len(argv) == 1:
@@ -261,7 +276,7 @@ def main():
 			quit()
 		# Other functions
 		elif i == "-v" or i == "--version":
-			print("\nAlignmentProcessor0.21 Copyright 2016 by Shawn Rupp\n")
+			print("\nAlignmentProcessor1.0 Copyright 2016 by Shawn Rupp\n")
 			print("This program comes with ABSOLUTELY NO WARRANTY\n")
 			print("This is free software, and you are welcome to redistribute\
  it under certain conditions\n")
@@ -291,6 +306,8 @@ def main():
 			phylip = True
 		elif i == "--kaks":
 			kaks = True
+		elif i == "-m":
+			method = argv[argv.index(i) + 1]
 		elif i == "--codeml":				
 			codeml = True
 		elif i == "--ucsc":
@@ -299,11 +316,13 @@ def main():
 			commonNames = True
 		elif i == "--retainStops":
 			retainStops = True
+		elif i == "--noCleanUp":
+			cleanup = False
 	# Check inout commands prior to running:
 	if ref == "void":
 		print("\n\tPlease pecify a reference species.\n")
 		quit()
-	checkInput(axt, kaks, phylip, codeml)
+	checkInput(axt, kaks, phylip, codeml, outdir)
 	# Save working directory to variable to call other scripts:
 	path = os.getcwd()
 	path = path + "/"
@@ -342,7 +361,7 @@ def main():
 			# Run KaKs_Calculator:
 			if kaks == True and codeml == False:
 				if ac == True:
-					ck = calculateKaKs(outdir)
+					ck = calculateKaKs(outdir, method)
 				if ck == True:
 					printCSV(outdir, starttime)
 		# Optionally covert files to phylip format:
@@ -352,7 +371,7 @@ def main():
 			# Run codeml
 			if codeml == True and kaks == False:
 				if pc == True:
-					runcodeml(cpu, outdir, forward, starttime)
+					runcodeml(cpu, outdir, forward, cleanup, starttime)
 
 if __name__ == "__main__":
 	main()
