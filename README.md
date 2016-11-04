@@ -12,7 +12,7 @@
 
 
 ##############################################################################
-# AlignmentProcessor0.21 Package
+# AlignmentProcessor1.0 Package
 
 #	Dependencies:	
 			Python 3
@@ -58,7 +58,7 @@ a terminal and Anaconda will install Biopython for you:
 	conda install -c https://conda.anaconda.org/anaconda biopython
 
 # KaKs_Calculator
-AlignmentProcessor0.21 is packaged with KaKs_Calculator2.0 binaries for Linux
+AlignmentProcessor1.0 is packaged with KaKs_Calculator2.0 binaries for Linux
 and Windows, and a KaKs_Calculator1.2 binary for Mac (there is no 2.0 binary
 available for OSX). Before using, copy or move the appropriate binary for your
 system into the AlignmentProcessor bin which contains the python scripts.
@@ -284,12 +284,12 @@ invoke KaKs_Calculator on the whole directory again.
 
 # Invoking the Ka/Ks pipeline with a UCSC alignment:
 
-	python AlignmentProcessor0.21.py --axt --kaks --ucsc -r anoCar2
+	python AlignmentProcessor1.0.py --axt --kaks --ucsc -r anoCar2
 	-i anolis_gallus.fa -o pairwiseKaKs/
 
 # Invoking the CodeML pipeline with a de novo alignment:
 
-	python AlignmentProcessor0.21.py --phylip --codeml -% 0.6
+	python AlignmentProcessor1.0.py --phylip --codeml -% 0.6
 	-r anoCar2 -i anolis_gallus.fa -o codemlOutput/
 
 -------------------------------
