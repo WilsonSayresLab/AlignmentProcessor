@@ -16,7 +16,7 @@
         model = 0  * models for codons:
                        * 0:one, 1:b, 2:2 or more dN/dS ratios for branches
 
-      NSsites = 1  * 0:one w;1:neutral;2:selection; 3:discrete;4:freqs;
+      NSsites = 0  * 0:one w;1:neutral;2:selection; 3:discrete;4:freqs;
                    * 5:gamma;6:2gamma;7:beta;8:beta&w;9:beta&gamma;
                    * 10:beta&gamma+1; 11:beta&normal>1; 12:0&2normal>1;
                    * 13:3normal>0
