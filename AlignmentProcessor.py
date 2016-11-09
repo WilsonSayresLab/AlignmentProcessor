@@ -1,7 +1,6 @@
 '''AlignmentProcessor will run the subsituion rate pipeline to produce trimmed
 axt or phylip files for use with KaKs_calculator or PhyMl.
 
-
 	Copyright 2016 by Shawn Rupp
 
 	This package is free software: you can redistribute it and/or modify
@@ -14,29 +13,18 @@ axt or phylip files for use with KaKs_calculator or PhyMl.
 	GNU General Public License for more details.'''
 
 from datetime import datetime
-from sys import argv
+import argparse
 from subprocess import Popen
 from shlex import split
 from glob import glob
 import os
 
-def readList(task, build, common):
-	'''Will print list of genome builds and associated common names and allow
-new entries to be added.'''
-	if task == "read":
-		with open("bin/02_nameList.txt", "r") as names:
-			for line in names:
-				print(line.rstrip())
-			quit()
-	if task == "add":
-		with open("bin/02_nameList.txt", "a") as names:
-			names.write(build + "\t" + common + "\n")
-			quit()
-
 def checkInput(axt, kaks, phylip, codeml, outdir):
 	'''Makes sure necessary programs are installed and proper file conversion
 is run for optional analysis program.'''
 	if kaks == True:
+		if codeml == True:
+			print("\n\tError: Please specify only one analysis program.\n")
 		indir = os.path.isfile("bin/KaKs_Calculator")
 		if indir == False:
 			print("\n\tError: Please install KaKs_Clculator in the\
@@ -68,310 +56,180 @@ is run for optional analysis program.'''
 			quit()
 
 		
-def makeDir(path, outdir, axt, phylip):
+def makeDir(path, outdir, axt, phylip, kaks, codeml):
 	'''Makes all sub-directories used by program.'''
+	print("\n\tMaking output directories...")
 	os.chdir(outdir)
-	for i in ["01_splitFastaFiles", "02_rmHeader", "03_checkFrame",
-			  "04_countBasesPercent", "05_ReplaceStopCodons", "Logs"]:
+	for i in ["01_splitFasta", "02_filteredFasta"]:
 		try:
 			os.mkdir(i)
 		except FileExistsError:
 			pass
 	if axt == True:
-		for i in ["06_axtFiles", "07_KaKsOutput"]:
-			try:
-				os.mkdir(i)
-			except FileExistsError:
-				pass
+		try:
+			os.mkdir("03_axtFiles")
+		except FileExistsError:
+			pass
+	if kaks == True:
+		try:
+			os.mkdir("04_KaKsOutput")
+		except FileExistsError:
+			pass
 	if phylip == True:
-		for i in ["06_phylipFiles", "07_codeml"]:
-			try:
-				os.mkdir(i)
-			except FileExistsError:
-				pass
+		try:
+			os.mkdir("03_phylipFiles")
+		except FileExistsError:
+			pass
+	if codeml == True:
+		try:
+			os.mkdir("04_CodemlOutput")
+		except FileExistsError:
+			pass	
 	os.chdir(path)
 
 #-----------------------------------------------------------------------------
-
-def convertHeaders(fasta):
-	'''Changes headers of UCSC CDS fasta files to includ eonly build name and
-gene ID'''
-	print("Converting fasta headers...")
-	ch = Popen(split("python bin/00_ConvertHeader.py " + fasta))
-	ch.wait()
-	# Extcact converted file name
-	path = fasta.split("/")[:-1]
-	outpath = ""
-	for i in path:
-		outpath += i + "/"
-	newfasta = outpath + "newHeader." + fasta.split("/")[-1]
-	if ch.returncode == 0:
-		return True, newfasta
 			
-def splitFasta(fasta, outdir):
+def splitFasta(infile, outdir):
 	'''Splits fasta alignment into one file per gene.'''
-	print("Splitting fasta file into separate files by gene...")
-	sf = Popen(split("python bin/01_SplitFastaFiles.py " + " "
-				+ fasta + " " + outdir))
+	sf = Popen(split("python bin/01_SplitFasta.py -i "
+				+ infile + " -o " + outdir + "01_splitFasta"))
 	sf.wait()
 	if sf.returncode == 0:
 		return True
-
-def rmHeader(outdir, commonNames):
-	'''Removes header information and changes genome build to common name.'''
-	print("Changing header...")
-	if commonNames == False:
-		rh = Popen(split("python bin/02_RemoveHeader.py " + outdir))
-	elif commonNames == True:
-		rh = Popen(split("python bin/02_RemoveHeader.py " + outdir + 
-						" --changeNames"))
-	rh.wait()
-	if rh.returncode == 0:
+	
+def filterFasta(outdir, ref, percent, retainstops):
+	'''Calls fasta filtering script'''
+	cmd = ("python bin/02_FilterFasta.py -i " + outdir + "01_splitFasta -o "
+			 + outdir + "02_filteredFasta -r " + ref)
+	if retainstops == True:
+		cmd += " --retainStops"
+	ff = Popen(split(cmd))
+	ff.wait()
+	if ff.returncode == 0:
 		return True
 	
-def checkFrame(outdir, ref):
-	'''Checks nucleotide frame of secondary species against the reference
-species'''
-	print("Checking nucleotide frames...")
-	cf = Popen(split("python bin/03_CheckFrame.py " +  " " + outdir
-				+ " " + ref))
+def convert(outdir, axt, phylip):
+	'''Converts fasta files to specified output type'''
+	cmd = ("python bin/03_ConvertFasta.py -i " + outdir + "02_filteredFasta -o "
+			+ outdir)
+	if phylip == True:
+		cmd += "03_phylipFiles --phylip"
+	elif axt == True:
+		cmd += "03_axtFiles --axt"
+	cf = Popen(split(cmd))
 	cf.wait()
 	if cf.returncode == 0:
 		return True
 
-def countBases(outdir, percent):
-	'''Checks that each species has at least 50% of it's nucleotide content.'''
-	print("Checking nucleotide content...")
-	cb = Popen(split("python bin/04_CountBases.py " + " " + percent +
-					 " " + outdir))
-	cb.wait()
-	if cb.returncode == 0:
-		return True
-
-def replaceStop(outdir, retainStops):
-	'''Removes stop codons for downstream analysis.'''
-	print("Removing stop codons...")
-	if retainStops == False:
-		rs = Popen(split("python bin/05_ReplaceStopCodons.py " + " "
-					 + outdir))
-	elif retainStops == True:
-		rs = Popen(split("python bin/05_ReplaceStopCodons.py " + " "
-					 + outdir + " retainStops"))
-	rs.wait()
-	if rs.returncode == 0:
-		return True
-	
-def axtConvert(outdir, kaks, starttime):
-	'''Open all input files in the directory and convert to axt script for
- use with KaKs_Calculator'''
-	print("Converting fasta files into axt files...")
-	ac = Popen(split("python bin/06_FASTAtoAXT.py " + outdir))
-	ac.wait()
-	if ac.returncode == 0:
-		if kaks == True:
-			return True
-		elif kaks == False:
-			print("Finished converting files.")
-			print("Total runtime: ", datetime.now() - starttime)
-
 def calculateKaKs(outdir, method):
-	'''Calculates substition rates.'''
-	print("Calculating Ka/Ks values...")
-	ck = Popen(split("python bin/07_KaKsonDir.py " + outdir + " " + method))
+	'''Calls KaKs_Calculator to calculate substition rates.'''
+	ck = Popen(split("python bin/04_CallKaKs.py -i" + outdir + 
+		"03_axtFiles -o " + outdir + "04_KaKsOutput -m " + method))
 	ck.wait()
 	if ck.returncode == 0:
 		return True
 
-def printCSV(outdir, starttime):
-	'''Prints Ka/Ks output as a single csv file.'''
-	print("Printing Ka/Ks output as a single text file...")
-	Popen(split("python bin/08_compileKaKs.py " + outdir))
-	print("Finished calculating Ka/Ks values.")
-	print("Total runtime: ", datetime.now() - starttime)
-
-def phylipConvert(outdir, starttime, codeml):
-	'''Converts fasta files to phylip format'''
-	print("Converting fasta files to phylip...")
-	pc = Popen(split("python bin/06_FASTAtoPhylip.py " + " " + outdir))
-	pc.wait()
-	if pc.returncode == 0:
-		if codeml == False:
-			print("Total runtime: ", datetime.now() - starttime)
-		return True
-
-def runcodeml(cpu, outdir, forward, cleanup, starttime):
+def runcodeml(cpu, outdir, forward, cleanup):
 	'''Runs codeml on a directory.'''
-	print("Running codeml...")
 	# Build commands and add options if necessary
-	string = "python bin/07_CodeMLonDir.py -t " + cpu + " -i " + outdir
+	cmd = ("python bin/04_CallCodeML.py -t " + str(cpu) + " -i " + outdir + 
+			"03_phylipFiles" + " -o " + outdir + "04_CodemlOutput")
 	if cleanup == False:
-		string += " --noCleanUp"
+		cmd += " --noCleanUp"
 	if forward:
-		string += " -f " + forward
-	cm = Popen(split(string))
+		cmd += " -f " + forward
+	cm = Popen(split(cmd))
 	cm.wait()
 	if cm.returncode == 0:
-		print("Total runtime: ", datetime.now() - starttime)
+		return True
 
 #-----------------------------------------------------------------------------
 
-def helplist():
-	print("\nAlignmentProcessor1.0 Copyright 2016 by Shawn Rupp\n")
-	print("\texample usage: python AlignmentProcessor.py -% <decimal> \
---axt/phylip --kaks/codeml -i <input fasta file> -o \
-<path to output directory> -r <reference species>\n")
-	print("\t-i\tpath to input file containing a multifasta alignment")
-	print("\t-o\tAlignmentProcessor will use this as its working \
-directory and print output to this directory")
-	print("\t-r\tthe name of the reference species which will be used to \
-determine the open reading frame")
-	print("\t--ucsc\tconverts headers of CDS fasta files obtained from \
-the UCSC genome browser")
-	print("\t--axt\tconverts files to axt for use in KaKs_Calcuator.")
-	print("\t--phylip\tconverts files to phylip for use in PhyML.")
-	print("\t--kaks\truns KaKs_Calcuator if --axt is also specified")
-	print("\t-m\tsets the method to calculate substitution rates in \
-KaKs_Calculator (NG by default).")
-	print("\t--codeml\tRuns codeml if --phylip is also specified")
-	print("\t-t\tnumber of threads to use for CodeML.")
-	print("\t-f\tspecifies the forward branch of the CodeML input tree.")
-	print("\t-%\tSets the percentage cutoff for the countBases step (50% \
-by default).")
-	print("\t--changeNames\tchange genome build names to common names.")
-	print("\t--retainStops\tretain sequences with internal stop codons")
-	print("\t--noCleanUp\ttells the program to keep temporary control files, \
-tree files, etc. (These files are removed by default)")
-	print("\t--printNameList\tprints list of genome build names and\
- associated common names")
-	print("\t--addNameToList\tadd new genome build name and\
- associated common name to list")
-	print("\t-v\tprints coyright and version information to the screen")
-	print("\n### Please note that you must be in the AlignmentProcessor \
-directory to run the program. ###\n")
-
 def main():
 	starttime = datetime.now()
-	# Set optional parameters:
-	commonNames = False
-	retainStops = False
-	cleanup = True
-	axt = False
-	phylip = False
-	kaks = False
-	codeml = False
-	conv = False
-	# Popen requires string input, so the following are typecast as strings
-	cpu = "1"
-	percent = "0.5"
-	ref = "void"
-	forward = ""
-	method = "NG"
-	for i in argv:
-		# Print help list
-		if len(argv) == 1:
-			helplist()
-			quit()
-		elif i == "-h" or i == "--help":
-			helplist()
-			quit()
-		# Other functions
-		elif i == "-v" or i == "--version":
-			print("\nAlignmentProcessor1.0 Copyright 2016 by Shawn Rupp\n")
-			print("This program comes with ABSOLUTELY NO WARRANTY\n")
-			print("This is free software, and you are welcome to redistribute\
- it under certain conditions\n")
-			quit()
-		elif i == "--printNameList":
-			readList("read", "void", "void")
-		elif i == "--addNameToList":
-			readList("add", argv[argv.index(i) + 1], argv[argv.index(i) + 2])
-		# Extract values from command line:
-		elif i == "-i":
-			fasta = argv[argv.index(i) + 1]
-		elif i == "-o":
-			outdir = argv[argv.index(i) + 1]
-			if outdir[-1] != "/":
-				outdir = outdir + "/"
-		elif i == "-r":
-			ref = argv[argv.index(i) + 1]
-		elif i == "-t":
-			cpu = str(argv[argv.index(i) + 1])
-		elif i == "-f":
-			forward = argv[argv.index(i) + 1]
-		elif i == "-%":
-			percent = str(argv[argv.index(i) + 1])
-		elif i == "--axt":
-			axt = True
-		elif i == "--phylip":
-			phylip = True
-		elif i == "--kaks":
-			kaks = True
-		elif i == "-m":
-			method = argv[argv.index(i) + 1]
-		elif i == "--codeml":				
-			codeml = True
-		elif i == "--ucsc":
-			conv = True
-		elif i == "--changeNames":
-			commonNames = True
-		elif i == "--retainStops":
-			retainStops = True
-		elif i == "--noCleanUp":
-			cleanup = False
+	# Set arguments
+	parser = argparse.ArgumentParser(description="AlignmentProcessor will run \
+the subsituion rate pipeline to produce trimmed axt or phylip files for use \
+with KaKs_calculator or PhyMl.\nAlignmentProcessor1.1 Copyright 2016 by \
+Shawn Rupp\nThis program comes with ABSOLUTELY NO WARRANTY\nThis is free \
+software, and you are welcome to redistribute it under certain conditions\n")
+	parser.add_argument("-i", help="Path to input file.")
+	parser.add_argument("-o", help="Path to output directory.")
+	parser.add_argument("-r", help="Genome build name of the reference \
+species as it appears in the fasta alignment.")
+	parser.add_argument("-p", type=float, default=0.5,
+help="Minimum required percentage of nucleotides remaining after filtering \
+(as a decimal).")
+	parser.add_argument("--retainStops", action="store_true", 
+help="Specifies that sequences containing internal stop codons should be \
+ratained.")
+	parser.add_argument("--axt", action="store_true", 
+help="Convert files to axt format.")
+	parser.add_argument("--phylip", action="store_true",
+help="Convert files to sequential phylip format.")
+	parser.add_argument("--kaks", action="store_true",
+help="Calls KaKs_Calculator on axt files.")
+	parser.add_argument("-m", default="NG", 
+help="Method for calculating Ka/Ks.")
+	parser.add_argument("--codeml", action="store_true",
+help="Calls CodeMl on phylip files.")
+	parser.add_argument("-t", type=int, default=1, help="Number of threads.")
+	parser.add_argument("-f", default="", 
+help="Forward species (name must be the same as it appears in input files.")
+	parser.add_argument("--noCleanUp", action="store_false", 
+help="Keep temporary files.")
+	# Parse arguments and assign to variables
+	args = parser.parse_args()
+	infile = args.i
+	outdir = args.o
+	if outdir != "/":
+		outdir += "/"
+	ref = args.r
+	percent = args.p
+	retainstops = args.retainStops
+	axt = args.axt
+	phylip = args.phylip
+	kaks = args.kaks
+	method = args.m
+	codeml = args.codeml
+	cpu = args.t
+	forward = args.f
+	cleanup = args.noCleanUp
 	# Check inout commands prior to running:
-	if ref == "void":
-		print("\n\tPlease pecify a reference species.\n")
+	if not ref:
+		print("\n\tError: Please specify a reference species.\n")
+		quit()
+	if axt == True and phylip == True:
+		print("\n\tError: Please specify only one file type.\n")
 		quit()
 	checkInput(axt, kaks, phylip, codeml, outdir)
-	# Save working directory to variable to call other scripts:
+	# Set checkpoint variables to False:
+	sf = False
+	ff = False
+	cf = False
+	done = False
+	# Save working directory to variable and call other scripts:
 	path = os.getcwd()
 	path = path + "/"
-	# Run program if the user did not ask for help:
-	if "-h" not in argv and "--help" not in argv:
-		# Set checkpoint variables to False:
-		ch = False
-		sf = False
-		rh= False
-		cf = False
-		cb = False
-		rs = False
-		ac = False
-		ck = False
-		pc = False
-		# Begin pipeline
-		makeDir(path, outdir, axt, phylip)
-		if conv == True:
-			ch, newfasta = convertHeaders(fasta)
-			if ch == True:
-				sf = splitFasta(newfasta, outdir)
+	makeDir(path, outdir, axt, phylip, kaks, codeml)
+	sf = splitFasta(infile, outdir)
+	if sf == True:
+		ff = filterFasta(outdir, ref, percent, retainstops)
+	if ff == True:
+		cf = convert(outdir, axt, phylip)
+	if cf == True:
+		# Run KaKs_Calculator:
+		if kaks == True:
+			done = calculateKaKs(outdir, method)
+		# Run codeml
+		elif codeml == True:
+			done = runcodeml(cpu, outdir, forward, cleanup)
 		else:
-			sf = splitFasta(fasta, outdir)
-		if sf == True:
-			rh = rmHeader(outdir, commonNames)
-		if rh == True:
-			cf = checkFrame(outdir, ref)
-		if cf == True:
-			cb =countBases(outdir, percent)
-		if cb == True:
-			rs = replaceStop(outdir, retainStops)
-		# Optionally covert files to axt format:
-		if axt == True:
-			if rs == True:
-				ac = axtConvert(outdir, kaks, starttime)
-			# Run KaKs_Calculator:
-			if kaks == True and codeml == False:
-				if ac == True:
-					ck = calculateKaKs(outdir, method)
-				if ck == True:
-					printCSV(outdir, starttime)
-		# Optionally covert files to phylip format:
-		if phylip == True:
-			if rs == True:
-				pc = phylipConvert(outdir, starttime, codeml)
-			# Run codeml
-			if codeml == True and kaks == False:
-				if pc == True:
-					runcodeml(cpu, outdir, forward, cleanup, starttime)
+			# Exit if neither program was called
+			done = True
+	# Print run time
+	if done == True:
+		print("\n\tTotal runtime: ", datetime.now() - starttime, "\n")
 
 if __name__ == "__main__":
 	main()

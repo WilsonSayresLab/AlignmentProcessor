@@ -23,9 +23,13 @@ DEVNULL = open(os.devnull, "w")
 
 #-----------------------------------------------------------------------------
 
-def outputFiles(path):
+def outputFiles(outdir):
 	'''Identifies genes which have already been run through CodeML.'''
-	finished = path + "Logs/finishedCodeML.txt"
+	finished = ""
+	path = outdir.split("/")[:-2]
+	for i in path:
+		finished += i + "/"
+	finished += "finishedCodeML.txt"
 	if os.path.isfile(finished) == False:
 		with open(finished, "w") as fin:
 			# Create log file and empty list
@@ -34,17 +38,23 @@ def outputFiles(path):
 		# Create list of completed files
 		with open(finished, "r") as fin:
 			completed = fin.readlines()
-	return completed
+	return finished, completed
 
-def controlFiles(path, forward, completed):
+def controlFiles(indir, outdir, forward, completed):
 	'''Reads input files and stores them in memory'''
 	go = False
+	pairwise = False
+	multiple = False
 	# Make temp directory
 	try:
-		os.mkdir(path + "tmp/")
+		os.mkdir(outdir + "tmp/")
 	except FileExistsError:
 		pass
-	control = glob(path + "*.ctl")
+	path = outdir.split("/")[:-2]
+	out = ""
+	for i in path:
+		out += i + "/"
+	control = glob(out + "*.ctl")
 	if len(control) > 1:
 		# Quit if multiple .ctl files are present
 		print("\n\tPlease provide only one control file for CodeML.\n")
@@ -54,18 +64,20 @@ def controlFiles(path, forward, completed):
 	for line in ctl:
 		# Determine if a phylogenic tree is needed
 		if "runmode = 0" in line or "runmode = 1" in line:
-			go = makeTree(path, forward, completed, ctl)
+			go = makeTree(indir, outdir, forward, completed, ctl)
+			multiple = True
 		elif "runmode = -2" in line:
-			go = pairwiseControl(path, completed, ctl)
+			go = pairwiseControl(indir, outdir, completed, ctl)
+			pairwise = True
 	if go == True:
-		return True
+		return pairwise, multiple
 
 #-----------------------------------------------------------------------------
 
-def makeTree(path, forward, completed, ctl):
+def makeTree(indir, outdir, forward, completed, ctl):
 	'''Calls PhyML to create a gene tree.'''
-	print("\n\tRunnning PhyMl to create gene trees...\n")
-	genes = glob(path + "06_phylipFiles/" + "*.phylip")
+	print("\tRunnning PhyMl to create gene trees...")
+	genes = glob(indir + "*.phylip")
 	for gene in genes:
 		filename = gene.split("/")[-1]
 		geneid = filename.split(".")[0]
@@ -77,14 +89,13 @@ def makeTree(path, forward, completed, ctl):
 			pass
 		else:
 			# Create temp directory
-			wd = path + "tmp/" + geneid + "/"
+			wd = outdir + "tmp/" + geneid + "/"
 			try:
 				os.mkdir(wd)
 			except FileExistsError:
 				pass
 			# Set unique file names
-			outfile = (path + "07_codeml/" + geneid + "." +
-						filename.split(".")[1] + ".mlc")
+			outfile = (outdir + geneid +"."+ filename.split(".")[1] + ".mlc")
 			tempctl = wd + geneid + ".ctl"
 			treefile = wd + filename + "_phyml_tree.txt"
 			# Make unique control file
@@ -128,10 +139,10 @@ def makeTree(path, forward, completed, ctl):
 					outtree.write(string)	
 	return True	
 
-def pairwiseControl(path, completed, ctl):
+def pairwiseControl(indir, outdir, completed, ctl):
 	'''Makes control files for pairwsie comparisons.'''
-	print("\n\tMaking pairwise CodeML control files...\n")
-	genes = glob(path + "06_phylipFiles/" + "*.phylip")
+	print("\tMaking pairwise CodeML control files...")
+	genes = glob(indir + "*.phylip")
 	for gene in genes:
 		filename = gene.split("/")[-1]
 		geneid = filename.split(".")[0]
@@ -140,14 +151,13 @@ def pairwiseControl(path, completed, ctl):
 			pass
 		else:
 			# Create temp directory
-			wd = path + "tmp/" + geneid + "/"
+			wd = outdir + "tmp/" + geneid + "/"
 			try:
 				os.mkdir(wd)
 			except FileExistsError:
 				pass
 			# Set unique file names
-			outfile = (path + "07_codeml/" + geneid + "." +
-						filename.split(".")[1] + ".mlc")
+			outfile = (outdir + geneid +"."+ filename.split(".")[1] + ".mlc")
 			tempctl = wd + geneid + ".ctl"
 			treefile = ""
 			# Make unique control file
@@ -169,11 +179,11 @@ def makeCtl(gene, outfile, tempctl, treefile, ctl):
 
 #-----------------------------------------------------------------------------
 
-def runCodeml(ap, path, completed, cleanup, gene):
+def runCodeml(ap, outdir, finished, completed, gene):
 	'''Creates temporary control and tree files and runs CodeML.'''
 	filename = gene.split("/")[-1]
 	geneid = filename.split(".")[0]
-	wd = path + "tmp/" + geneid + "/"
+	wd = outdir + "tmp/" + geneid + "/"
 	if len(glob(wd + "*")) > 1:
 		if filename.split(".")[1] == "2":
 			# Skip pairwise genes if tree files are present
@@ -187,12 +197,9 @@ def runCodeml(ap, path, completed, cleanup, gene):
 		cm = Popen(split(ap + "/paml/bin/codeml " + tempctl), 
 						stdout = DEVNULL)
 		cm.wait()
-		# Delete temp files and add to count when finished
-		if cleanup == True:
-			shutil.rmtree(wd)
 		# Append gene ID to list of finishedCodeML.txt
-		with open(path + "Logs/finishedCodeML.txt", "a") as finished:
-			finished.write(geneid + "\n")
+		with open(finished, "a") as fin:
+			fin.write(geneid + "\n")
 
 #-----------------------------------------------------------------------------
 
@@ -200,43 +207,47 @@ def main():
 	starttime = datetime.now()
 	# Save path to the AlignmentProcessor directory
 	ap = os.getcwd() + "/"
-	cpu = 1
-	forward = ""
 	run = False
 	# Parse command
 	parser = argparse.ArgumentParser(description="Runs CodeML on all files \
 in a directory.")
 	parser.add_argument("-i", help="Path to input directory.")
-	parser.add_argument("-t", type=int, help="Number of threads.")
-	parser.add_argument("-f", help="Forward species (name must be the same \
-as it appears in input files.")
+	parser.add_argument("-o", help="Path to output directory.")
+	parser.add_argument("-t", type=int, default=1, help="Number of threads.")
+	parser.add_argument("-f", default="", 
+help="Forward species (name must be the same as it appears in input files.")
 	parser.add_argument("--noCleanUp", action="store_false", 
 help="Keep temporary files.")
 	args = parser.parse_args()
 	# Assign arguments
-	path = args.i
-	if path[-1] != "/":
-		path += "/"
+	indir = args.i
+	if indir[-1] != "/":
+		indir += "/"
+	outdir = args.o
+	if outdir[-1] != "/":
+		outdir += "/"
 	cpu = args.t
+	if cpu > MAXCPU:
+		cpu = MAXCPU
 	forward = args.f
 	cleanup = args.noCleanUp
 	# Reads in required data
-	completed = outputFiles(path)
-	run = controlFiles(path, forward, completed)
-	if run == True:
+	finished, completed = outputFiles(outdir)
+	pairwise, multiple = controlFiles(indir, outdir, forward, completed)
+	if pairwise == True or multiple == True:
 		# Call CodeML after PhyML completes.
-		genes = glob(path + "06_phylipFiles/" + "*.phylip")
+		genes = glob(indir + "*.phylip")
 		l = int(len(genes))
 		pool = Pool(processes = cpu)
-		func = partial(runCodeml, ap, path, completed, cleanup)
-		print("\n\tRunning CodeML with", str(cpu), "threads....\n")
+		func = partial(runCodeml, ap, outdir, finished, completed)
+		print("\tRunning CodeML with", str(cpu), "threads....")
 		rcml = pool.imap(func, genes, chunksize = int(l/cpu))
 		pool.close()
 		pool.join()	
 	# Remove tmp directory
 	if cleanup == True:
-		os.rmdir(path + "tmp/")
-	print("\n\tCodeML runtime: ", datetime.now() - starttime, "\n")
+		shutil.rmtree(outdir + "tmp/")
+	print("\tCodeML runtime: ", datetime.now() - starttime, "\n")
 
 if __name__ == "__main__":
 	main()
