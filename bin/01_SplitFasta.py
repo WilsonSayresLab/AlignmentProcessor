@@ -64,7 +64,7 @@ def splitFasta(infile, outdir):
 
 def convertHeader(line):
 	'''Returns a header containing only the genome build name.'''
-	if line.startswith(">ENS") == True:
+	if "_" in line:
 		# Extract relevant data from UCSC header
 		genebuild = line[1:].split()[0]
 		genebuild = genebuild.split("_")
