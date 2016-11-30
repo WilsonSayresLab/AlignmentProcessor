@@ -68,10 +68,10 @@ def convertHeader(line):
 		# Extract relevant data from UCSC header
 		genebuild = line[1:].split()[0]
 		genebuild = genebuild.split("_")
-		build = ">" + str(genebuild[-1]) + "\n"
+		build = ">" + str(genebuild[1]) + "\n"
 		geneid = str(genebuild[0].split(".")[0])
 	else:
-		# Extract build without ">" 
+		# Extract build and geneid 
 		build = ">" + line.split(".")[0][1:].rstrip() + "\n"
 		geneid = str(line.split(".")[1]).rstrip()
 	return build, geneid
