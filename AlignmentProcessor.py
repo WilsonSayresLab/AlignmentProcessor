@@ -22,38 +22,43 @@ import os
 def checkInput(axt, kaks, phylip, codeml, outdir):
 	'''Makes sure necessary programs are installed and proper file conversion
 is run for optional analysis program.'''
+	proceed = True
 	if kaks == True:
 		if codeml == True:
 			print("\n\tError: Please specify only one analysis program.\n")
+			proceed = False
 		indir = os.path.isfile("bin/KaKs_Calculator")
 		if indir == False:
-			print("\n\tError: Please install KaKs_Clculator in the\
+			print("\n\tError: Please install KaKs_Calculator in the\
  AlignmentProcessor bin.\n")
-			quit()
+			proceed = False
 		if axt == False:
 			print("\n\tError: Files must be converted into axt format for use\
  with KaKs_Clculator.\n")
-			quit()
+			proceed = False
 	if codeml == True:
+		control = glob(outdir + "*.ctl")
+		if len(control) == 0:
+			print("\n\tPlease supply a control file for CodeML.\n")
+			proceed = False
+		elif len(control) > 1:
+			print("\n\tPlease supply only one CodeML control file.\n")
+			proceed = False
 		indir = os.path.isfile("paml/bin/codeml")
 		phyml = os.path.isfile("PhyML/PhyML")
 		if indir == False:
 			print("\n\tError: Please install PAML in the\
  AlignmentProcessor folder.\n")
-			quit()
+			proceed = False
 		if phyml == False:
 			print("\n\tError: Please install and rename PhyML for use\
  with CodeML.\n")
-			quit()
+			proceed = False
 		if phylip == False:
 			print("\n\tError: Files must be converted into phylip format for use\
  with CodeML.\n")
-		control = glob(outdir + "*.ctl")
-		if len(control) == 0:
-			print("\n\tPlease supply a control file for CodeML.\n")
-		elif len(control) > 1:
-			print("\n\tPlease supply only one CodeML control file.\n")
-			quit()
+			proceed = False
+	return proceed
 
 		
 def makeDir(path, outdir, axt, phylip, kaks, codeml):
@@ -202,34 +207,35 @@ help="Keep temporary files.")
 	if axt == True and phylip == True:
 		print("\n\tError: Please specify only one file type.\n")
 		quit()
-	checkInput(axt, kaks, phylip, codeml, outdir)
-	# Set checkpoint variables to False:
-	sf = False
-	ff = False
-	cf = False
-	done = False
-	# Save working directory to variable and call other scripts:
-	path = os.getcwd()
-	path = path + "/"
-	makeDir(path, outdir, axt, phylip, kaks, codeml)
-	sf = splitFasta(infile, outdir)
-	if sf == True:
-		ff = filterFasta(outdir, ref, percent, retainstops)
-	if ff == True:
-		cf = convert(outdir, axt, phylip)
-	if cf == True:
-		# Run KaKs_Calculator:
-		if kaks == True:
-			done = calculateKaKs(outdir, method)
-		# Run codeml
-		elif codeml == True:
-			done = runcodeml(cpu, outdir, forward, cleanup)
-		else:
-			# Exit if neither program was called
-			done = True
-	# Print run time
-	if done == True:
-		print("\n\tTotal runtime: ", datetime.now() - starttime, "\n")
+	proceed = checkInput(axt, kaks, phylip, codeml, outdir)
+	if proceed == True:
+		# Set checkpoint variables to False:
+		sf = False
+		ff = False
+		cf = False
+		done = False
+		# Save working directory to variable and call other scripts:
+		path = os.getcwd()
+		path = path + "/"
+		makeDir(path, outdir, axt, phylip, kaks, codeml)
+		sf = splitFasta(infile, outdir)
+		if sf == True:
+			ff = filterFasta(outdir, ref, percent, retainstops)
+		if ff == True:
+			cf = convert(outdir, axt, phylip)
+		if cf == True:
+			# Run KaKs_Calculator:
+			if kaks == True:
+				done = calculateKaKs(outdir, method)
+			# Run codeml
+			elif codeml == True:
+				done = runcodeml(cpu, outdir, forward, cleanup)
+			else:
+				# Exit if neither program was called
+				done = True
+		# Print run time
+		if done == True:
+			print("\n\tTotal runtime: ", datetime.now() - starttime, "\n")
 
 if __name__ == "__main__":
 	main()
