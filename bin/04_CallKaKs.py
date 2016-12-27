@@ -4,30 +4,34 @@ AlignmentProcessor directory to run.
 
 	Copyright 2016 by Shawn Rupp'''
 
-import argparse
+from datetime import datetime
+from sys import stdout
+from glob import glob
 from subprocess import Popen
 from shlex import split
-from glob import glob
+from functools import partial
+from multiprocessing import Pool, cpu_count
+import argparse
 import os
 
+# Define max number of threads and devnull for capturing stdout
+MAXCPU = cpu_count()
 DEVNULL = open(os.devnull, "w")
 
-def calculateKaKs(indir, outdir, method):
+def calculateKaKs(indir, outdir, method, axt):
 	'''Calculates substition rates.'''
-	print("\tRunning KaKs_Calculator...")
-	files = glob(indir + "*.axt")
-	for axt in files:
-		with open(axt, "r") as infile:
-			filename = axt.split("/")[-1]
-			# Create output file
-			outfile = (outdir + filename.split(".")[0] + ".kaks")
-			ck = Popen(split("bin/KaKs_Calculator -i " + axt + " -o " +
-							 outfile + " -m " + method), stdout = DEVNULL)
-			ck.wait()
-	return True
+	with open(axt, "r") as infile:
+		filename = axt.split("/")[-1]
+		# Create output file
+		outfile = (outdir + filename.split(".")[0] + ".kaks")
+		ck = Popen(split("bin/KaKs_Calculator -i " + axt + " -o " +
+						 outfile + " -m " + method), stdout = DEVNULL)
+		ck.wait()
+	if ck.returncode() == 0:
+		return True
 
 def compileKsKs(outdir):
-	'''Prints Ka/Ks output as a single csv file.'''
+	'''Prints Ka/Ks output as a single tsv file.'''
 	print("\tCompiling KaKs_Calculator output...")
 	# Set counter so the header is only printed once
 	count =  0
@@ -56,13 +60,17 @@ def compileKsKs(outdir):
 						output.write("GeneID\t" + line.replace("\t",","))
 						count += 1
 
+#-----------------------------------------------------------------------------
+
 def main():
+	starttime = datetime.now()
 	concatenate = False
 	parser = argparse.ArgumentParser(description="This program will run \
 KaKs_Calculator on a directory.")
-	parser.add_argument("-i", help="Path to input file.")
-	parser.add_argument("-o", help="Path to output file.")
-	parser.add_argument("-m", help="Method for calculating Ka/Ks.") 
+	parser.add_argument("-i", help = "Path to input file.")
+	parser.add_argument("-o", help = "Path to output file.")
+	parser.add_argument("-m", help = "Method for calculating Ka/Ks.") 
+	parser.add_argument("-t", type = int, help = "Number of threads.")
 	# Parse arguments and assign to variables
 	args = parser.parse_args()
 	indir = args.i
@@ -72,9 +80,21 @@ KaKs_Calculator on a directory.")
 	if outdir != "/":
 		outdir += "/"
 	method = args.m
-	concatenate = calculateKaKs(indir, outdir, method)
-	if concatenate == True:
-		compileKsKs(outdir)
+	cpu = args.t
+	if cpu > MAXCPU:
+		cpu = MAXCPU
+	# Call Ka/Ks_Calculator in parallel.
+	genes = glob(indir + "*.axt")
+	l = int(len(genes))
+	pool = Pool(processes = cpu)
+	func = partial(calculateKaKs, indir, outdir, method)
+	print("\tRunning CodeML with", str(cpu), "threads....")
+	rcml = pool.imap(func, genes)
+	pool.close()
+	pool.join()
+	# Compile output
+	compileKsKs(outdir)
+	print("\tKaKs_Calculator runtime: ", datetime.now() - starttime)
 
 if __name__ == "__main__":
 	main()
