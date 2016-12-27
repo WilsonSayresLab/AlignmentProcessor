@@ -10,13 +10,13 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-# AlignmentProcessor1.1 Package
+# AlignmentProcessor1.2 Package
 
 # Dependencies:	
 	Python 3
 	Python 3 version of Biopython
 	PAML (if using CodeML)
-	PhyML (if using CodeML)
+	PhyML (if using CodeML for multiple species alignments)
 
 
 AlignmentProcessor is a pipeline meant to quickly convert a multi-fasta 

@@ -126,10 +126,11 @@ def convert(outdir, axt, phylip):
 	if cf.returncode == 0:
 		return True
 
-def calculateKaKs(outdir, method):
+def calculateKaKs(outdir, method, cpu):
 	'''Calls KaKs_Calculator to calculate substition rates.'''
 	ck = Popen(split("python bin/04_CallKaKs.py -i" + outdir + 
-		"03_axtFiles -o " + outdir + "04_KaKsOutput -m " + method))
+		"03_axtFiles -o " + outdir + "04_KaKsOutput -m " + method + 
+		" -t  " + str(cpu)))
 	ck.wait()
 	if ck.returncode == 0:
 		return True
@@ -140,7 +141,7 @@ def runcodeml(cpu, outdir, forward, cleanup):
 	cmd = ("python bin/04_CallCodeML.py -t " + str(cpu) + " -i " + outdir + 
 			"03_phylipFiles" + " -o " + outdir + "04_CodemlOutput")
 	if cleanup == False:
-		cmd += " --noCleanUp"
+		cmd += " --cleanUp"
 	if forward:
 		cmd += " -f " + forward
 	cm = Popen(split(cmd))
@@ -181,8 +182,9 @@ help="Calls CodeMl on phylip files.")
 	parser.add_argument("-t", type=int, default=1, help="Number of threads.")
 	parser.add_argument("-f", default="", 
 help="Forward species (name must be the same as it appears in input files.")
-	parser.add_argument("--noCleanUp", action="store_false", 
-help="Keep temporary files.")
+	parser.add_argument("--cleanUp", action="store_false", 
+help="Remove temporary files (it may be useful to retain phylogenic trees \
+for future use).")
 	# Parse arguments and assign to variables
 	args = parser.parse_args()
 	infile = args.i
@@ -199,7 +201,7 @@ help="Keep temporary files.")
 	codeml = args.codeml
 	cpu = args.t
 	forward = args.f
-	cleanup = args.noCleanUp
+	cleanup = args.cleanUp
 	# Check inout commands prior to running:
 	if not ref:
 		print("\n\tError: Please specify a reference species.\n")
@@ -226,7 +228,7 @@ help="Keep temporary files.")
 		if cf == True:
 			# Run KaKs_Calculator:
 			if kaks == True:
-				done = calculateKaKs(outdir, method)
+				done = calculateKaKs(outdir, method, cpu)
 			# Run codeml
 			elif codeml == True:
 				done = runcodeml(cpu, outdir, forward, cleanup)
