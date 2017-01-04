@@ -67,7 +67,7 @@ def makeTree(indir, outdir, forward, completed, ctl, gene):
 			pass
 		# Set unique file names
 		outfile = (out + geneid + "." + filename.split(".")[1] + ".mlc")
-		tempctl = wd + geneid + ".ctl"
+		tempctl = wd + "codeml.ctl"
 		treefile = wd + filename + "_phyml_tree.txt"
 		# Make unique control file
 		makeCtl(gene, outfile, tempctl, treefile, ctl)
@@ -130,7 +130,7 @@ def pairwiseControl(indir, outdir, ctl, gene):
 		out += i + "/"
 	# Set unique file names
 	outfile = (out + geneid +"."+ filename.split(".")[1] + ".mlc")
-	tempctl = wd + geneid + ".ctl"
+	tempctl = wd + "codeml.ctl"
 	treefile = ""
 	# Make unique control file
 	makeCtl(gene, outfile, tempctl, treefile, ctl)
@@ -150,27 +150,9 @@ def makeCtl(gene, outfile, tempctl, treefile, ctl):
 
 #-----------------------------------------------------------------------------
 
-def main():
-	# Parse command
-	parser = argparse.ArgumentParser(description="Runs CodeML on all files \
-in a directory.")
-	parser.add_argument("-i", help="Path to input directory.")
-	parser.add_argument("-o", help="Path to temp directory.")
-	parser.add_argument("-t", type=int, default=1, help="Number of threads.")
-	parser.add_argument("-f", default="", 
-help="Forward species (name must be the same as it appears in input files.")
-	args = parser.parse_args()
-	# Assign arguments
-	indir = args.i
-	if indir[-1] != "/":
-		indir += "/"
-	outdir = args.o
-	if outdir[-1] != "/":
-		outdir += "/"
-	cpu = args.t
-	forward = args.f
+def phyml(indir, outdir, cpu, forward=""):
 	# Reads in required data
-	completed, ctl, multiple = outputFiles( outdir)
+	completed, ctl, multiple = outputFiles(outdir)
 	# Call PhyML for multiple alignments or write pairwise control files.
 	genes = glob(indir + "*.phylip")
 	l = int(len(genes))
@@ -196,6 +178,4 @@ threads...").format(cpu))
 		rpml = pool.imap(func, genes, chunksize = chunk)
 		pool.close()
 		pool.join()	
-
-if __name__ == "__main__":
-	main()
+	return multiple
