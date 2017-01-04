@@ -22,37 +22,40 @@ def readMultiple(indir, outfile):
 		output.write("TranscriptID,dN,dS,dN/dS,TreeLength,lnL,Species\n")
 		infiles = glob(indir + "*")
 		for infile in infiles:
-			# Get gene id and number of species remaining for each file
-			filename = infile.split("/")[-1]
-			transcript = filename.split(".")[0]
-			species = filename.split(".")[1]
-			if int(species) > 2:
-				with open(infile, "r") as mlc:
-					for line in mlc:
-						# Get substitution rates, tree lengths, etc
-						if "tree length =" in line:
-							length = line.split("=")[1].strip()
-						elif "tree length for dN" in line:
-							dn = line.split(":")[1].strip()
-						elif "tree length for dS" in line:
-							ds = line.split(":")[1].strip()
-						elif "lnL" in line:
-							lnl = line.split("):")[1]
-							lnl = lnl.split()[0].strip()
-				# Calculate dN/dS and save as a string
-				try:
-					dnds = str(float(dn)/float(ds))
-				except ZeroDivisionError:
-					dnds = "NA"
-				# Append data to list and convert into string
-				data = [dn, ds, dnds, length, lnl, species]
-				transcript += ","
-				for i in data:
-					transcript += str(i) + ","
-				transcript = transcript[:-1]
-				output.write(transcript + "\n")
-			else:
-				# Skip files with only two sequences
+			try:
+				# Get gene id and number of species remaining for each file
+				filename = infile.split("/")[-1]
+				transcript = filename.split(".")[0]
+				species = filename.split(".")[1]
+				if int(species) > 2:
+					with open(infile, "r") as mlc:
+						for line in mlc:
+							# Get substitution rates, tree lengths, etc
+							if "tree length =" in line:
+								length = line.split("=")[1].strip()
+							elif "tree length for dN" in line:
+								dn = line.split(":")[1].strip()
+							elif "tree length for dS" in line:
+								ds = line.split(":")[1].strip()
+							elif "lnL" in line:
+								lnl = line.split("):")[1]
+								lnl = lnl.split()[0].strip()
+					# Calculate dN/dS and save as a string
+					try:
+						dnds = str(float(dn)/float(ds))
+					except ZeroDivisionError:
+						dnds = "NA"
+					# Append data to list and convert into string
+					data = [dn, ds, dnds, length, lnl, species]
+					transcript += ","
+					for i in data:
+						transcript += str(i) + ","
+					transcript = transcript[:-1]
+					output.write(transcript + "\n")
+				else:
+					# Skip files with only two sequences
+					pass
+			except IsADirectoryError:
 				pass
 
 def readPairwise(indir, outfile):
@@ -61,28 +64,31 @@ def readPairwise(indir, outfile):
 		output.write("TranscriptID,dN,dS,dN/dS,lnL\n")
 		infiles = glob(indir + "*")
 		for infile in infiles:
-			# Get gene id and number of species remaining for each file
-			filename = infile.split("/")[-1]
-			transcript = filename.split(".")[0]
-			with open(infile, "r") as mlc:
-				for line in mlc:
-					if line[:2] == "t=":
-						# Extract dN, dS, and dN/dS
-						i = line.index("dN/dS")
-						j = line.index("dN ")
-						k = line.index("dS ")
-						dnds = line[i:j].split("=")[1].strip()
-						dn = line[j:k].split("=")[1].strip()
-						ds = line[k:].split("=")[1].strip()
-					elif "lnL" in line:
-						lnl = line.split("=")[1].strip()
-			# Append data to list and convert into string
-			data = [dn, ds, dnds, lnl]
-			transcript += ","
-			for i in data:
-				transcript += str(i) + ","
-			transcript = transcript[:-1]
-			output.write(transcript + "\n")			
+			try:
+				# Get gene id and number of species remaining for each file
+				filename = infile.split("/")[-1]
+				transcript = filename.split(".")[0]
+				with open(infile, "r") as mlc:
+					for line in mlc:
+						if line[:2] == "t=":
+							# Extract dN, dS, and dN/dS
+							i = line.index("dN/dS")
+							j = line.index("dN ")
+							k = line.index("dS ")
+							dnds = line[i:j].split("=")[1].strip()
+							dn = line[j:k].split("=")[1].strip()
+							ds = line[k:].split("=")[1].strip()
+						elif "lnL" in line:
+							lnl = line.split("=")[1].strip()
+				# Append data to list and convert into string
+				data = [dn, ds, dnds, lnl]
+				transcript += ","
+				for i in data:
+					transcript += str(i) + ","
+				transcript = transcript[:-1]
+				output.write(transcript + "\n")			
+			except IsADirectoryError:
+				pass
 
 def main():
 	parser = argparse.ArgumentParser(description="This script will \
