@@ -156,7 +156,7 @@ def main():
 	# Set arguments
 	parser = argparse.ArgumentParser(description="AlignmentProcessor will run \
 the subsituion rate pipeline to produce trimmed axt or phylip files for use \
-with KaKs_calculator or PhyMl.\nAlignmentProcessor1.1 Copyright 2016 by \
+with KaKs_calculator or PhyMl.\nAlignmentProcessor1.2 Copyright 2016 by \
 Shawn Rupp\nThis program comes with ABSOLUTELY NO WARRANTY\nThis is free \
 software, and you are welcome to redistribute it under certain conditions\n")
 	parser.add_argument("-i", help="Path to input file.")
