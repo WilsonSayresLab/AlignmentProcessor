@@ -82,7 +82,7 @@ def seqDict(fasta, n):
 				species = line[1:].strip()
 			if line[0] != ">":
 				codons = []
-				seq = line.strip()
+				seq = line.strip().upper()
 				for i in range(0, len(seq), 3):
 					codons.append(seq[i:i +3])
 					i += 3
