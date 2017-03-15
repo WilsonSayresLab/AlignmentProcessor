@@ -1,27 +1,23 @@
-'''This program will run CodeML on a directory of single gene alignments.
-It will generate a unique control file and tree file for each input gene
-before invoking CodeML using the number of CPUs specified by the user
-(default = 1).
+'''This program will call the CodeML cython script on a directory of 
+single gene alignments. It will generate a unique control file and tree 
+file for each input gene before invoking CodeML using the number of CPUs 
+specified by the user (default = 1).
 
 	Copyright 2016 by Shawn Rupp'''
 
+from __future__ import division
 from datetime import datetime
-from sys import stdout
 from glob import glob
-from subprocess import Popen
-from shlex import split
-from functools import partial
 from multiprocessing import Pool, cpu_count
+from functools import partial
 import argparse
 import shutil
+import sys
 import math
 import os
-import re
-from callPhyML import phyml
+from parallelCodeML import parallelize
 
-# Define max number of threads and devnull for capturing stdout
 MAXCPU = cpu_count()
-DEVNULL = open(os.devnull, "w")
 
 #-----------------------------------------------------------------------------
 
@@ -44,40 +40,30 @@ def outputFiles(outdir):
 
 def controlFiles(indir, outdir, forward, cpu):
 	'''Reads input files and stores them in memory'''
+	multiple = False
 	# Make temp directory
 	tmp = outdir + "tmp/"
 	try:
 		os.mkdir(tmp)
 	except FileExistsError:
 		pass
-	multiple = phyml(indir, tmp, cpu, forward)
-	return True, multiple
-
-#-----------------------------------------------------------------------------
-
-def runCodeml(ap, outdir, finished, completed, multiple, gene):
-	'''Creates temporary control and tree files and runs CodeML.'''
-	filename = gene.split("/")[-1]
-	geneid = filename.split(".")[0]
-	wd = outdir + "tmp/" + geneid + "/"
-	if (geneid + "\n") in completed:
-		pass
-	else:
-		tempctl = wd + "codeml.ctl"
-		os.chdir(wd)
-		if multiple == True:
-			if filename.split(".")[1] == "2":
-				pass
-			else:
-				# Calls CodeML if 3 or more sequences are present
-				cm = Popen(split(ap + "paml/bin/codeml " + tempctl), 
-								stdout = DEVNULL)
-		elif multiple == False:
-			# Call CodeML for all files
-			cm = Popen(split(ap + "paml/bin/codeml " + tempctl), 
-							stdout = DEVNULL)
-		with open(finished, "a") as fin:
-			fin.write(geneid + "\n")
+		# Reconstruct output path
+	path = outdir.split("/")[:-2]
+	out = ""
+	for i in path:
+		out += i + "/"
+	control = glob(out + "*.ctl")
+	if len(control) > 1:
+		# Quit if multiple .ctl files are present
+		print("\n\tPlease provide only one control file for CodeML.\n")
+		quit()
+	with open(control[0], "r") as infile:
+		ctl = infile.readlines() 
+	for line in ctl:
+		# Determine if a phylogenic tree is needed
+		if "runmode = 0" in line or "runmode = 1" in line:
+			multiple = True
+	return ctl, multiple
 
 #-----------------------------------------------------------------------------
 
@@ -85,6 +71,11 @@ def main():
 	starttime = datetime.now()
 	# Save path to the AlignmentProcessor directory
 	ap = os.getcwd() + "/"
+	if " " in ap:
+		# Change to warning ########################################################
+		print("\tWARNING: AlignmentProcessor will not run properly if there \
+is a space in its PATH name.")
+		ap = ap.replace(" (ASU)", "")
 	run = False
 	# Parse command
 	parser = argparse.ArgumentParser(description="Runs CodeML on all files \
@@ -95,7 +86,8 @@ in a directory.")
 	parser.add_argument("-f", default="", 
 help="Forward species (name must be the same as it appears in input files.")
 	parser.add_argument("--cleanUp", action="store_true", 
-help="Remove temporary files (it may be useful to retain phylogenic trees for future use).")
+help="Remove temporary files (it may be useful to retain phylogenic trees \
+for future use).")
 	args = parser.parse_args()
 	# Assign arguments
 	indir = args.i
@@ -108,29 +100,27 @@ help="Remove temporary files (it may be useful to retain phylogenic trees for fu
 	if cpu > MAXCPU:
 		cpu = MAXCPU
 	forward = args.f
-	cleanup = args.cleanUp
 	# Reads in required data
 	finished, completed = outputFiles(outdir)
-	run, multiple = controlFiles(indir, outdir, forward, cpu)
-	if run == True:
-		# Call CodeML after PhyML completes.
+	ctl, multiple = controlFiles(indir, outdir, forward, cpu)
+	# Call PhyML and CodeML in parallel completes.
+	if ctl:
+		# Call CodeML and PhyML
 		genes = glob(indir + "*.phylip")
 		l = int(len(genes))
-		# Determine chunksize
-		if l <= cpu:
-			chunk = 1
-		elif l > cpu:
-			chunk = int(math.ceil(l/cpu))
+		func = partial(parallelize, ap, outdir, finished, completed, multiple,
+						cpu, ctl, forward)
+		print(("\tRunning CodeML on {0!s} genes with {1!s} threads...."
+				).format(l, cpu))
 		pool = Pool(processes = cpu)
-		func = partial(runCodeml, ap, outdir, finished, completed, multiple)
-		print(("\tRunning CodeML with {0!s} threads....").format(cpu))
-		rcml = pool.imap_unordered(func, genes, chunksize = chunk)
+		for i, _ in enumerate(pool.imap_unordered(func, genes), 1):
+			sys.stderr.write("\r\t{0:%} of genes have finished".format(i/l))
 		pool.close()
-		pool.join()		
+		pool.join()
 	# Remove tmp directory
-	if cleanup == True:
+	if args.cleanUp == True:
 		shutil.rmtree(outdir + "tmp/")
-	print(("\tCodeML runtime: {0!s}").format(datetime.now() - starttime))
+	print(("\n\tCodeML runtime: {0!s}").format(datetime.now() - starttime))
 
 if __name__ == "__main__":
 	main()

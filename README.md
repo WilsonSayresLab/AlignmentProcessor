@@ -10,7 +10,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-# AlignmentProcessor1.2 Package
+# AlignmentProcessor1.3 Package
 
 # Dependencies:	
 	Python 3
