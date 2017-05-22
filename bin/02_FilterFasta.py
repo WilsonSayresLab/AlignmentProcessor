@@ -82,7 +82,7 @@ def seqDict(fasta, n):
 				species = line[1:].strip()
 			if line[0] != ">":
 				codons = []
-				seq = line.strip().upper()
+				seq = line.strip()
 				for i in range(0, len(seq), 3):
 					codons.append(seq[i:i +3])
 					i += 3
@@ -130,7 +130,6 @@ remove unknown amino acids'''
 def removeStops(n, newseq, retainStops, geneid, log):
 	'''This will replace internal stop codons with gaps, create a list
 of genes with internal stop codons, and remove those sequences.'''
-	count = n
 	remove = []
 	for species in newseq:
 		# Replace terminal stop codons so the program can identify
@@ -142,7 +141,7 @@ of genes with internal stop codons, and remove those sequences.'''
 				newseq[species][-1] = "---"
 		except (IndexError, ValueError) as e:
 			# Remove empty sequences
-			count -= 1
+			n -= 1
 			del newseq[species] 
 			with open(log, "a") as logfile:
 				logfile.write(geneid + "\t" + species + 
@@ -163,18 +162,18 @@ of genes with internal stop codons, and remove those sequences.'''
 	if retainStops == False:
 		# Remove key after iterating to avoid using multiple breaks
 		for species in remove:
-			count -= 1
+			n -= 1
 			del newseq[species]
-	if count >= 2:
-		return True, newseq, count
-	elif count < 2:
+	if n >= 2:
+		return True, newseq, n
+	elif n < 2:
 		# Skip files with only one sequence left
 		pass
 
 def countBases(n, newseq, percent, geneid, log):
 	'''Counts the number of nucleotides and only writes the sequence to an
 output file if they compose greater than the cutoff threshold of the sequence'''
-	count = n
+	failed = []
 	for species in newseq:
 		seq = ""
 		for i in newseq[species]:
@@ -187,21 +186,20 @@ output file if they compose greater than the cutoff threshold of the sequence'''
 		aligned = acount + tcount + ccount + gcount
 		try:
 			# Determine whether or not the sequence passes the treshold
-			if aligned/len(seq) >= percent:
-				pass
-			else:
+			if aligned/len(seq) < percent:
 				# Remove sequences that do not meet the threshold
-				del newseq[species]
+				failed.append(species)
 				with open(log, "a") as logfile:
 					logfile.write(geneid + "\t" + species + 
 								"\tLow Nucleotide Count\n")
-				count -= 1
-				break
 		except ZeroDivisionError:
-			del newseq[species]
-	if count >= 2:
-		return True, newseq, count
-	elif count < 2:
+			failed.append(species)
+	for i in failed:
+		del newseq[i]
+		n -= 1
+	if n >= 2:
+		return True, newseq, n
+	elif n < 2:
 		# Do not proceed if dict does not have at least two sequences
 		pass 
 

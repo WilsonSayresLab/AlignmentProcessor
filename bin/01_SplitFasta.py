@@ -24,40 +24,51 @@ def splitFasta(infile, outdir):
 	# Parse input fasta
 	with open(infile, "r") as fasta:
 		newid = True
+		prev = True
 		seq = ""
 		n = 0
 		for line in fasta:
-			if line != "\n":
+			if line.strip():
 				if line[0] == ">":
-					line, geneid = convertHeader(line)
+					prev = True
+					build, geneid = convertHeader(line)
 					# Concatenate lines for all species for each gene
-					seq += str(line)
-					# Determine number of sequences and species names
-					n += 1
 					if newid == True:
 						# Set reference species ID as file name
 						filename = geneid
 						newid = False
 				else:
 					# Concatenate remaining lines
-					seq += str(line)
-			elif line == "\n" and newid == False:
+					line = line.upper()
+					if ("A" not in line or "C" not in line or "G" not in line
+						 or "T" not in line):
+						pass
+					else:
+						# Save gene if it contains nucleotides
+						if prev == True:
+							n += 1
+							seq += build
+							prev == False
+						seq += str(line)
+			elif not line.strip() and newid == False:
 				# Use empty lines to determine where genes end
-				if n >= 2:
+				if n >= 2 and seq.count("\n") > 3:
 					# Print gene sequences to file if there are at least two
 					# species and reset for next gene
 					outfile = (outdir + filename + "." + str(n) + ".fa")
 					with open(outfile, "w") as output:
 						output.write(seq)
 					newid = True
+					prev = False
 					seq = ""
 					n = 0
 					passed += 1
-				elif n < 2:
+				else:
 					# Skip genes with only one sequence and save ID in log
 					with open(log, "a") as logfile:
 						logfile.write(geneid + "\n")
 					excluded += 1
+					newid = True
 	with open(log, "a") as logfile:
 		logfile.write(("\nTotal transcripts written to file: {}\n").format(passed))
 		logfile.write(("Total transcripts with only one sequence: {}").format(excluded))
@@ -68,13 +79,24 @@ def convertHeader(line):
 		# Extract relevant data from UCSC header
 		genebuild = line[1:].split()[0]
 		genebuild = genebuild.split("_")
-		build = ">" + str(genebuild[1]) + "\n"
-		geneid = str(genebuild[0].split(".")[0])
+		if line[1] == "E":
+			# Ensembl IDs
+			build = ">" + str(genebuild[1]) + "\n"
+			geneid = str(genebuild[0].split(".")[0])
+		elif line[1] == "N":
+			# NCBI IDs
+			build = ">" + str(genebuild[2]) + "\n"
+			geneid = str(genebuild[0]) + "_" + str(genebuild[1])
 	else:
 		# Extract build and geneid 
 		build = ">" + line.split(".")[0][1:].rstrip() + "\n"
 		geneid = str(line.split(".")[1]).rstrip()
-	return build, geneid
+	if geneid and build:
+		return build, geneid
+	else:
+		print("Please use a fasta file with Ensembl, NCBI, or Galaxy Stitch \
+Gene Blocks IDs.")
+		quit()
 
 def main():
 	parser = argparse.ArgumentParser(description="This will take the \

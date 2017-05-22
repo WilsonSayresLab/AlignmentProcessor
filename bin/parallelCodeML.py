@@ -9,6 +9,7 @@ from sys import stdout
 from glob import glob
 from subprocess import Popen
 from shlex import split
+from shutil import rmtree
 import math
 import shutil
 import os
@@ -21,40 +22,39 @@ def makeTree(ap, gene, wd, treefile, forward):
 	# Call PhyML to make gene tree
 	phy = Popen(split(ap + "PhyML/PhyML -q -i " + gene), stdout = DEVNULL)
 	phy.wait()
-	if phy.returncode == 0:
-		# Move PhyML output to temp directory
-		output = glob(gene + "_phyml_*") 
-		for i in output:
-			shutil.copy(i, wd)
-			os.remove(i)
-		# Read in PhyML tree
-		with open(treefile, "r") as genetree:
-			try:
-				tree = genetree.readlines()[0]
-			except IndexError:
-				pass
-		# Remove branch lables introduced by PhyML
-		tree = re.sub(r"\d+\.\d+:", ":", tree)
-		# Add forward node to tree if specified 
-		if forward:
-			if forward in tree:
-				# Determine location and length of species name
-				i = tree.index(forward) + len(forward)
-				if ":" in tree:
-					# Find end of branch length
-					comma = tree.find(",", i)
-					paren = tree.find(")", i)
-					i = min([comma, paren])
-				# Insert space and node symbol after species name
-				tree = (tree[:i] + " #1" + tree[i:])
-		elif forward not in tree:
+	# Move PhyML output to temp directory
+	output = glob(gene + "_phyml_*") 
+	for i in output:
+		shutil.copy(i, wd)
+		os.remove(i)
+	# Read in PhyML tree
+	with open(treefile, "r") as genetree:
+		try:
+			tree = genetree.readlines()[0]
+		except IndexError:
 			pass
-		with open(treefile, "w") as outtree:
-			# Overwrite treefile
-			string = ""
-			for i in tree:
-				string += i
-			outtree.write(string)
+	# Remove branch lables introduced by PhyML
+	tree = re.sub(r"\d+\.\d+:", ":", tree)
+	# Add forward node to tree if specified 
+	if forward:
+		if forward in tree:
+			# Determine location and length of species name
+			i = tree.index(forward) + len(forward)
+			if ":" in tree:
+				# Find end of branch length
+				comma = tree.find(",", i)
+				paren = tree.find(")", i)
+				i = min([comma, paren])
+			# Insert space and node symbol after species name
+			tree = (tree[:i] + " #1" + tree[i:])
+	elif forward not in tree:
+		pass
+	with open(treefile, "w") as outtree:
+		# Overwrite treefile
+		string = ""
+		for i in tree:
+			string += i
+		outtree.write(string)
 
 def makeCtl(gene, outfile, tempctl, treefile, ctl):
 	'''Creates unique control file'''
@@ -72,7 +72,7 @@ def makeCtl(gene, outfile, tempctl, treefile, ctl):
 #-----------------------------------------------------------------------------
 
 def parallelize(ap, outdir, finished, completed, multiple, cpu, ctl, 
-				forward, gene):
+				forward, treefile, gene):
 	filename = gene.split("/")[-1]
 	geneid = filename.split(".")[0]
 	if (geneid + "\n") in completed:
@@ -90,27 +90,31 @@ def parallelize(ap, outdir, finished, completed, multiple, cpu, ctl,
 		if multiple == True:
 			if filename.split(".")[1] == "2":
 				# Skip pairwise genes and remove directory
-				os.rmdir(wd)
+				rmtree(wd)
 				pass
 			else:
-				treefile = wd + filename + "_phyml_tree.txt"
-				# Make control file and run PhyML
+				if not treefile:
+					# Run Phyml
+					treefile = wd + filename + "_phyml_tree.txt"
+					makeTree(ap, gene, wd, treefile, forward)
+				# Make control file
 				makeCtl(gene, outfile, tempctl, treefile, ctl)
-				makeTree(ap, gene, wd, treefile, forward)
 				os.chdir(wd)
 				# Call CodeML
-				cm = Popen(split(ap + "paml/bin/codeml " + tempctl), 
-								stdout = DEVNULL)
-				cm.wait()
+				with open(wd + "codemlLog.txt", "w") as tmpout:
+					cm = Popen(split(ap + "paml/bin/codeml " + tempctl),
+									shell = True, stdout = tmpout)
+					cm.wait()
 		elif multiple == False:
 			# Make control file
 			treefile = wd + filename + ""
 			makeCtl(gene, outfile, tempctl, treefile, ctl)
 			# Call CodeML for all files
 			os.chdir(wd)
-			cm = Popen(split(ap + "paml/bin/codeml " + tempctl),
-							stdout = DEVNULL)
-			cm.wait()
+			with open(wd + "codemlLog.txt", "w") as tmpout:
+				cm = Popen(split(ap + "paml/bin/codeml " + tempctl),
+								shell = True, stdout = tmpout)
+				cm.wait()
 		with open(finished, "a") as fin:
 			# Append gene id to list when done
 			fin.write(geneid + "\n")

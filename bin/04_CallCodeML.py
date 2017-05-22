@@ -73,9 +73,9 @@ def main():
 	ap = os.getcwd() + "/"
 	if " " in ap:
 		# Change to warning ########################################################
-		print("\tError: AlignmentProcessor will not run properly if there \
+		print("\tWARNING: AlignmentProcessor will not run properly if there \
 is a space in its PATH name.")
-		quit()
+		ap = ap.replace(" (ASU)", "")
 	run = False
 	# Parse command
 	parser = argparse.ArgumentParser(description="Runs CodeML on all files \
@@ -85,6 +85,7 @@ in a directory.")
 	parser.add_argument("-t", type=int, default=1, help="Number of threads.")
 	parser.add_argument("-f", default="", 
 help="Forward species (name must be the same as it appears in input files.")
+	parser.add_argument("-n", help = "Path to optional Newick tree.")
 	parser.add_argument("--cleanUp", action="store_true", 
 help="Remove temporary files (it may be useful to retain phylogenic trees \
 for future use).")
@@ -100,6 +101,7 @@ for future use).")
 	if cpu > MAXCPU:
 		cpu = MAXCPU
 	forward = args.f
+	ntree = args.n
 	# Reads in required data
 	finished, completed = outputFiles(outdir)
 	ctl, multiple = controlFiles(indir, outdir, forward, cpu)
@@ -109,7 +111,7 @@ for future use).")
 		genes = glob(indir + "*.phylip")
 		l = int(len(genes))
 		func = partial(parallelize, ap, outdir, finished, completed, multiple,
-						cpu, ctl, forward)
+						cpu, ctl, forward, ntree)
 		print(("\tRunning CodeML on {0!s} genes with {1!s} threads...."
 				).format(l, cpu))
 		pool = Pool(processes = cpu)

@@ -135,15 +135,17 @@ def calculateKaKs(outdir, method, cpu):
 	if ck.returncode == 0:
 		return True
 
-def runcodeml(cpu, outdir, forward, cleanup):
+def runcodeml(cpu, outdir, forward, ntree, cleanup):
 	'''Runs codeml on a directory.'''
 	# Build commands and add options if necessary
 	cmd = ("python bin/04_CallCodeML.py -t " + str(cpu) + " -i " + outdir + 
 			"03_phylipFiles" + " -o " + outdir + "04_CodemlOutput")
-	if cleanup == False:
+	if cleanup == True:
 		cmd += " --cleanUp"
 	if forward:
 		cmd += " -f " + forward
+	if ntree:
+		cmd += " -n " + ntree
 	cm = Popen(split(cmd))
 	cm.wait()
 	if cm.returncode == 0:
@@ -156,7 +158,7 @@ def main():
 	# Set arguments
 	parser = argparse.ArgumentParser(description="AlignmentProcessor will run \
 the subsituion rate pipeline to produce trimmed axt or phylip files for use \
-with KaKs_calculator or PhyMl.\nAlignmentProcessor1.2 Copyright 2016 by \
+with KaKs_calculator or PhyMl.\nAlignmentProcessor1.4 Copyright 2016 by \
 Shawn Rupp\nThis program comes with ABSOLUTELY NO WARRANTY\nThis is free \
 software, and you are welcome to redistribute it under certain conditions\n")
 	parser.add_argument("-i", help="Path to input file.")
@@ -182,7 +184,8 @@ help="Calls CodeMl on phylip files.")
 	parser.add_argument("-t", type=int, default=1, help="Number of threads.")
 	parser.add_argument("-f", default="", 
 help="Forward species (name must be the same as it appears in input files.")
-	parser.add_argument("--cleanUp", action="store_false", 
+	parser.add_argument("-n", help = "Path to optional Newick tree.")
+	parser.add_argument("--cleanUp", action="store_true", 
 help="Remove temporary files (it may be useful to retain phylogenic trees \
 for future use).")
 	# Parse arguments and assign to variables
@@ -201,6 +204,7 @@ for future use).")
 	codeml = args.codeml
 	cpu = args.t
 	forward = args.f
+	ntree = args.n
 	cleanup = args.cleanUp
 	# Check inout commands prior to running:
 	if not ref:
@@ -231,7 +235,7 @@ for future use).")
 				done = calculateKaKs(outdir, method, cpu)
 			# Run codeml
 			elif codeml == True:
-				done = runcodeml(cpu, outdir, forward, cleanup)
+				done = runcodeml(cpu, outdir, forward, ntree, cleanup)
 			else:
 				# Exit if neither program was called
 				done = True
