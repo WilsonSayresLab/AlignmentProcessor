@@ -101,7 +101,7 @@ def parallelize(ap, outdir, finished, completed, multiple, cpu, ctl,
 				makeCtl(gene, outfile, tempctl, treefile, ctl)
 				os.chdir(wd)
 				# Call CodeML
-				with open(wd + "codemlLog.txt", "w") as tmpout:
+				with open("codemlLog.txt", "w") as tmpout:
 					cm = Popen(split(ap + "paml/bin/codeml " + tempctl),
 									shell = True, stdout = tmpout)
 					cm.wait()
@@ -111,7 +111,7 @@ def parallelize(ap, outdir, finished, completed, multiple, cpu, ctl,
 			makeCtl(gene, outfile, tempctl, treefile, ctl)
 			# Call CodeML for all files
 			os.chdir(wd)
-			with open(wd + "codemlLog.txt", "w") as tmpout:
+			with open("codemlLog.txt", "w") as tmpout:
 				cm = Popen(split(ap + "paml/bin/codeml " + tempctl),
 								shell = True, stdout = tmpout)
 				cm.wait()
