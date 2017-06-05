@@ -28,34 +28,35 @@ def readMultiple(indir, outfile):
 				transcript = filename.split(".")[0]
 				species = filename.split(".")[1]
 				if int(species) > 2:
-					with open(infile, "r") as mlc:
-						for line in mlc:
-							# Get substitution rates, tree lengths, etc
-							if "tree length =" in line:
-								length = line.split("=")[1].strip()
-							elif "tree length for dN" in line:
-								dn = line.split(":")[1].strip()
-							elif "tree length for dS" in line:
-								ds = line.split(":")[1].strip()
-							elif "lnL" in line:
-								lnl = line.split("):")[1]
-								lnl = lnl.split()[0].strip()
-					# Calculate dN/dS and save as a string
 					try:
-						dnds = str(float(dn)/float(ds))
-					except ZeroDivisionError:
-						dnds = "NA"
-					# Append data to list and convert into string
-					data = [dn, ds, dnds, length, lnl, species]
-					transcript += ","
-					for i in data:
-						transcript += str(i) + ","
-					transcript = transcript[:-1]
-					output.write(transcript + "\n")
+						with open(infile, "r") as mlc:
+							for line in mlc:
+								# Get substitution rates, tree lengths, etc
+								if "tree length =" in line:
+									length = line.split("=")[1].strip()
+								elif "tree length for dN" in line:
+									dn = line.split(":")[1].strip()
+								elif "tree length for dS" in line:
+									ds = line.split(":")[1].strip()
+								elif "lnL" in line:
+									lnl = line.split("):")[1]
+									lnl = lnl.split()[0].strip()
+						# Calculate dN/dS and save as a string
+						try:
+							dnds = str(float(dn)/float(ds))
+						except ZeroDivisionError:
+							dnds = "NA"
+						# Append data to list and convert into string
+						data = [dn, ds, dnds, length, lnl, species]
+						transcript += ","
+						for i in data:
+							transcript += str(i) + ","
+						transcript = transcript[:-1]
+						output.write(transcript + "\n")
 				else:
 					# Skip files with only two sequences
 					pass
-			except IsADirectoryError:
+			except IsADirectoryError, UnboundLocalError:
 				pass
 
 def readPairwise(indir, outfile):
