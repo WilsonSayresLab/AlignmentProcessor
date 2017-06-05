@@ -116,7 +116,7 @@ for future use).")
 				).format(l, cpu))
 		pool = Pool(processes = cpu)
 		for i, _ in enumerate(pool.imap_unordered(func, genes), 1):
-			sys.stderr.write("\r\t{0:%} of genes have finished".format(i/l))
+			sys.stderr.write("\r\t{0:.1%} of genes have finished".format(i/l))
 		pool.close()
 		pool.join()
 	# Remove tmp directory
