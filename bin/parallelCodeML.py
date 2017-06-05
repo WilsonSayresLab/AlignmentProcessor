@@ -20,6 +20,7 @@ DEVNULL = open(os.devnull, "w")
 def makeTree(ap, gene, wd, treefile, forward):
 	'''Calls PhyML to create a gene tree.'''
 	# Call PhyML to make gene tree
+	passed = True
 	phy = Popen(split(ap + "PhyML/PhyML -q -i " + gene), stdout = DEVNULL)
 	phy.wait()
 	# Move PhyML output to temp directory
@@ -32,29 +33,31 @@ def makeTree(ap, gene, wd, treefile, forward):
 		try:
 			tree = genetree.readlines()[0]
 		except IndexError:
+			passed = False
+	if passed == True:
+		# Remove branch lables introduced by PhyML
+		tree = re.sub(r"\d+\.\d+:", ":", tree)
+		# Add forward node to tree if specified 
+		if forward:
+			if forward in tree:
+				# Determine location and length of species name
+				i = tree.index(forward) + len(forward)
+				if ":" in tree:
+					# Find end of branch length
+					comma = tree.find(",", i)
+					paren = tree.find(")", i)
+					i = min([comma, paren])
+				# Insert space and node symbol after species name
+				tree = (tree[:i] + " #1" + tree[i:])
+		elif forward not in tree:
 			pass
-	# Remove branch lables introduced by PhyML
-	tree = re.sub(r"\d+\.\d+:", ":", tree)
-	# Add forward node to tree if specified 
-	if forward:
-		if forward in tree:
-			# Determine location and length of species name
-			i = tree.index(forward) + len(forward)
-			if ":" in tree:
-				# Find end of branch length
-				comma = tree.find(",", i)
-				paren = tree.find(")", i)
-				i = min([comma, paren])
-			# Insert space and node symbol after species name
-			tree = (tree[:i] + " #1" + tree[i:])
-	elif forward not in tree:
-		pass
-	with open(treefile, "w") as outtree:
-		# Overwrite treefile
-		string = ""
-		for i in tree:
-			string += i
-		outtree.write(string)
+		with open(treefile, "w") as outtree:
+			# Overwrite treefile
+			string = ""
+			for i in tree:
+				string += i
+			outtree.write(string)
+	return passed
 
 def makeCtl(gene, outfile, tempctl, treefile, ctl):
 	'''Creates unique control file'''
@@ -93,18 +96,20 @@ def parallelize(ap, outdir, finished, completed, multiple, cpu, ctl,
 				rmtree(wd)
 				pass
 			else:
+				passed = True
 				if not treefile:
 					# Run Phyml
 					treefile = wd + filename + "_phyml_tree.txt"
-					makeTree(ap, gene, wd, treefile, forward)
-				# Make control file
-				makeCtl(gene, outfile, tempctl, treefile, ctl)
-				os.chdir(wd)
-				# Call CodeML
-				with open("codemlLog.txt", "w") as tmpout:
-					cm = Popen(split(ap + "paml/bin/codeml " + tempctl),
-							shell = True, stdout = tmpout, stderr = tmpout)
-					cm.wait()
+					passed = makeTree(ap, gene, wd, treefile, forward)
+				if passed == True:
+					# Make control file
+					makeCtl(gene, outfile, tempctl, treefile, ctl)
+					os.chdir(wd)
+					# Call CodeML
+					with open("codemlLog.txt", "w") as tmpout:
+						cm = Popen(split(ap + "paml/bin/codeml " + tempctl),
+								shell = True, stdout = tmpout, stderr = tmpout)
+						cm.wait()
 		elif multiple == False:
 			# Make control file
 			treefile = wd + filename + ""
