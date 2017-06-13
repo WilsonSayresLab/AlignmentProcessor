@@ -72,10 +72,9 @@ def main():
 	# Save path to the AlignmentProcessor directory
 	ap = os.getcwd() + "/"
 	if " " in ap:
-		# Change to warning ########################################################
-		print("\tWARNING: AlignmentProcessor will not run properly if there \
-is a space in its PATH name.")
-		ap = ap.replace(" (ASU)", "")
+		print("\tError: AlignmentProcessor will not run properly if there \
+is a space in its PATH name. Exiting.\n")
+		quit()
 	run = False
 	# Parse command
 	parser = argparse.ArgumentParser(description="Runs CodeML on all files \

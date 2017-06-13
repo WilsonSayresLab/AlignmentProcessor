@@ -19,10 +19,13 @@ from shlex import split
 from glob import glob
 import os
 
-def checkInput(axt, kaks, phylip, codeml, outdir):
+def checkInput(ref, kaks, codeml, outdir):
 	'''Makes sure necessary programs are installed and proper file conversion
 is run for optional analysis program.'''
 	proceed = True
+	if not ref:
+		print("\n\tError: Please specify a reference species.\n")
+		proceed = False
 	if kaks == True:
 		if codeml == True:
 			print("\n\tError: Please specify only one analysis program.\n")
@@ -31,10 +34,6 @@ is run for optional analysis program.'''
 		if indir == False:
 			print("\n\tError: Please install KaKs_Calculator in the\
  AlignmentProcessor bin.\n")
-			proceed = False
-		if axt == False:
-			print("\n\tError: Files must be converted into axt format for use\
- with KaKs_Clculator.\n")
 			proceed = False
 	if codeml == True:
 		control = glob(outdir + "*.ctl")
@@ -52,10 +51,6 @@ is run for optional analysis program.'''
 			proceed = False
 		if phyml == False:
 			print("\n\tError: Please install and rename PhyML for use\
- with CodeML.\n")
-			proceed = False
-		if phylip == False:
-			print("\n\tError: Files must be converted into phylip format for use\
  with CodeML.\n")
 			proceed = False
 	return proceed
@@ -172,9 +167,9 @@ help="Minimum required percentage of nucleotides remaining after filtering \
 help="Specifies that sequences containing internal stop codons should be \
 ratained.")
 	parser.add_argument("--axt", action="store_true", 
-help="Convert files to axt format.")
+help="Convert files to axt format without calling KaKs_Calculator.")
 	parser.add_argument("--phylip", action="store_true",
-help="Convert files to sequential phylip format.")
+help="Convert files to sequential phylip format without calling CodeML.")
 	parser.add_argument("--kaks", action="store_true",
 help="Calls KaKs_Calculator on axt files.")
 	parser.add_argument("-m", default="NG", 
@@ -206,15 +201,14 @@ for future use).")
 	forward = args.f
 	ntree = args.n
 	cleanup = args.cleanUp
-	# Check inout commands prior to running:
-	if not ref:
-		print("\n\tError: Please specify a reference species.\n")
-		quit()
-	if axt == True and phylip == True:
-		print("\n\tError: Please specify only one file type.\n")
-		quit()
-	proceed = checkInput(axt, kaks, phylip, codeml, outdir)
+	# Check input commands prior to running:
+	proceed = checkInput(ref, kaks, codeml, outdir)
 	if proceed == True:
+		# Set axt or phylip
+		if codeml == True:
+			phylip = True
+		elif kaks == True:
+			axt = True
 		# Set checkpoint variables to False:
 		sf = False
 		ff = False
