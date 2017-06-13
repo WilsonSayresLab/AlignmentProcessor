@@ -32,7 +32,7 @@ def branchSite(infiles, outfile):
 	with open(outfile, "w") as output:
 		# Open output file and write header
 		output.write("TranscriptID,Foreground_dN/dS,Background_dN/dS,\
-TreeLength,lnL,Species,SitesUnderSelection (Amino Acid; PosteriorProbability)\n")
+TreeLength,lnL,Species,SitesUnderSelection (Residue; Probability)\n")
 		for infile in infiles:
 			try:
 				# Get gene id and number of species remaining for each file
