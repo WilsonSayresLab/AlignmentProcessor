@@ -87,6 +87,11 @@ def convertHeader(line):
 			# NCBI IDs
 			build = ">" + str(genebuild[2]) + "\n"
 			geneid = str(genebuild[0]) + "_" + str(genebuild[1])
+	elif "TRINITY" in line:
+		line = line.split("TRINITY-")[1]
+		line = line.strip()
+		build = ">" + line[:line.find("-")] + "\n"
+		geneid = line[line.find("-")+1:]
 	else:
 		# Extract build and geneid 
 		build = ">" + line.split(".")[0][1:].rstrip() + "\n"

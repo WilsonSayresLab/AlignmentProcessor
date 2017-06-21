@@ -94,19 +94,22 @@ def seqDict(fasta, n):
 def checkFrame(seqs, ref):
 	'''Removes gaps in the reference sequence introduced by
 	alignment and removes corresponding sites in other species'''
-	for codon in seqs[ref]: 
+	for idx,codon in enumerate(seqs[ref]): 
 		if codon == "---":
 			pass
 		else:
 			if "-" in str(codon):
 				# Remove gaps from reference sequence
 				i = codon.index("-")
-				idx = seqs[ref].index(codon)
 				codon = codon[:i] + codon[i + 1:]
 				for key in seqs:
-					# Remove corresponding gaps in other sequences
-					triplet = seqs[key][idx]
-					triplet = triplet[:i] + triplet[i + 1:]
+					if key != ref:
+						# Remove corresponding gaps in other sequences
+						try:
+							triplet = seqs[key][idx]
+							triplet = triplet[:i] + triplet[i + 1:]
+						except:
+							pass
 	return True, seqs
 						
 def fixCodons(newseq):

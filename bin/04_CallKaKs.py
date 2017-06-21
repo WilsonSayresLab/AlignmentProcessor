@@ -24,8 +24,8 @@ def calculateKaKs(indir, outdir, method, axt):
 		filename = axt.split("/")[-1]
 		# Create output file
 		outfile = (outdir + filename.split(".")[0] + ".kaks")
-		ck = Popen(split("bin/KaKs_Calculator -i " + axt + " -o " +
-						 outfile + " -m " + method), stdout = DEVNULL)
+		cmd = "bin/KaKs_Calculator -i "+axt+" -o "+outfile+" -m "+method
+		ck = Popen(split(cmd), stdout = DEVNULL)
 		ck.wait()
 	if ck.returncode() == 0:
 		return True
@@ -69,8 +69,8 @@ def main():
 KaKs_Calculator on a directory.")
 	parser.add_argument("-i", help = "Path to input file.")
 	parser.add_argument("-o", help = "Path to output file.")
-	parser.add_argument("-m", help = "Method for calculating Ka/Ks.") 
-	parser.add_argument("-t", type = int, help = "Number of threads.")
+	parser.add_argument("-m", default = "NG", help = "Method for calculating Ka/Ks.") 
+	parser.add_argument("-t", type = int, default = 1, help = "Number of threads.")
 	# Parse arguments and assign to variables
 	args = parser.parse_args()
 	indir = args.i
