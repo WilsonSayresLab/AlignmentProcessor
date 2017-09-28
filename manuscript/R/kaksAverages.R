@@ -2,7 +2,7 @@
 #-------------- OverView ----------------
 #
 #  This R script will subset Ka/Ks data and print means and medians
-#   for autosomes, X, and Y chromosomes and append to a csv file.
+#   for autosomes and the X chromosome and append to a csv file.
 #
 #	Required Programs:	R
 #
