@@ -10,7 +10,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-# AlignmentProcessor1.5 Package
+# AlignmentProcessor1.6 Package
 
 # Dependencies:	
 	Python 3
@@ -37,18 +37,10 @@ can cloned using the following command:
 
 	git clone https://github.com/WilsonSayresLab/AlignmentProcessor.git
 
-### Installing Biopython
-Since Biopython offers the fastest and easiest ways to deal with alignments
-in a python script, it is used in several of the scripts in this package.
-The easiest way to install Biopython is to download a Python 3 version 
-Anaconda (https://www.continuum.io/downloads). AlignmentProcessor was written
-in Python 3, but Python 3 will be installed alongside Anaconda, so you don't 
-need to worry about that if you use Python 2. 
+### pyfaidx  
+AlignmentProcessor uses pyfaidx to parse fasta alignments. To install:
 
-Once Anaconda is installed, all you have to do is paste the following into
-a terminal and Anaconda will install Biopython for you:
-
-	conda install -c https://conda.anaconda.org/anaconda biopython
+	pip install pyfaidx  
 
 ### KaKs_Calculator
 AlignmentProcessor0.21 is packaged with KaKs_Calculator2.0 binaries for Linux
