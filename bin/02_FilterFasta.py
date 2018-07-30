@@ -9,6 +9,7 @@ import argparse
 from glob import glob
 from collections import OrderedDict
 import os
+import pyfaidx
 
 def openFiles(indir, outdir, ref, percent, retainStops):
 	'''Opens all input files in the directory, performs filtering steps, 
@@ -76,17 +77,13 @@ def seqDict(fasta, n):
 	'''Convert fasta into separate sequence objects, determine sequence names
 	and create dictionary entries for each set of codons'''
 	seqs = OrderedDict()
-	with open(fasta, "r") as infile:
-		for line in infile:
-			if line[0] == ">":
-				species = line[1:].strip()
-			if line[0] != ">":
-				codons = []
-				seq = line.strip()
-				for i in range(0, len(seq), 3):
-					codons.append(seq[i:i +3])
-					i += 3
-				seqs[species] = codons
+	with pyfaidx.Fasta(fasta) as infile:  # you can treat infile like a dictionary too
+		for seq in infile:  # or just iterate over the entries
+			codons = []
+			for i in range(0, len(seq), 3):  # so far no sequence has actually been read
+				codons.append(seq[i:i +3].seq)  # the .seq method fetches the codon from the file
+				i += 3
+			seqs[seq.name] = codons  # the sequence name is stored without '>' or '\n'
 		return True, seqs
 
 #-----------------------------------------------------------------------------
